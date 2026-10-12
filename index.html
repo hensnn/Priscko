@@ -207,6 +207,53 @@ input.txt{
 .big.green{background:var(--leaf)}
 .big:active{transform:rotate(1deg) translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
 .big[disabled]{background:#999;cursor:not-allowed}
+/* --- formulář další hry: kompaktní --- */
+.fhead{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.fhead h2{margin:0}
+.fhead .dayline{flex:1;min-width:180px}
+.pick{display:flex;align-items:center;gap:8px;margin-top:10px}
+.plbl{flex:none;width:74px;font-weight:900;font-size:13px}
+.seats.sm{flex-wrap:nowrap;overflow-x:auto;gap:8px;padding:7px 8px 7px 2px;flex:1;scrollbar-width:none}
+.seats.sm::-webkit-scrollbar{display:none}
+.seats.sm .seat .tok{width:44px;height:44px;font-size:20px;border-width:3px;box-shadow:2px 2px 0 var(--ink)}
+.seats.sm .seat.on .tok{outline-width:4px;outline-offset:1px}
+.seats.sm .seat.on::after{font-size:15px;top:-7px;right:-7px}
+.scorebox{display:flex;gap:10px;align-items:stretch;margin-top:14px}
+.ptsbig{
+  flex:1.15;min-width:0;display:flex;flex-direction:column;justify-content:center;align-items:center;cursor:text;
+  border:4px solid var(--ink);border-radius:18px;background:#fff;box-shadow:4px 4px 0 var(--ink);padding:4px 6px 8px
+}
+.ptsbig input{
+  width:100%;border:0;background:transparent;text-align:center;font-family:var(--display);
+  font-size:76px;line-height:1;padding:0;outline:none;color:var(--ink);-moz-appearance:textfield
+}
+.ptsbig input::-webkit-outer-spin-button,.ptsbig input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.ptsbig input::placeholder{color:#ccc}
+.ptsbig span{font-size:12px;font-weight:900;opacity:.6;margin-top:-4px}
+.scorebox .mults{flex:1;grid-template-columns:1fr 1fr;align-content:stretch;gap:6px}
+.scorebox .mult{padding:3px 2px;font-size:9px;line-height:1.05;border-radius:12px;display:flex;flex-direction:column;justify-content:center}
+.scorebox .mult b{font-size:27px;line-height:1}
+.slider{display:flex;align-items:center;gap:8px;margin-top:12px}
+.slider input[type=range]{flex:1;margin:0;height:24px}
+.slider input[type=range]::-webkit-slider-thumb{width:46px;height:46px}
+.slider input[type=range]::-moz-range-thumb{width:42px;height:42px}
+.total{
+  margin-top:14px;background:var(--ink);color:#fff;border-radius:18px;padding:10px 12px 12px;text-align:center;
+  box-shadow:4px 4px 0 var(--red);transform:rotate(-.6deg)
+}
+.total .who{display:flex;justify-content:center;align-items:center;gap:6px;font-weight:900;font-size:15px;flex-wrap:wrap}
+.total .who .tok{border-color:#fff}
+.total .who .q{opacity:.55;font-weight:800}
+.total .sum{
+  font-family:var(--display);font-size:clamp(64px,22vw,96px);line-height:1;color:var(--mustard);letter-spacing:2px;
+  -webkit-text-stroke:2px #000;paint-order:stroke fill;text-shadow:4px 4px 0 var(--red);margin:4px 0 2px
+}
+.total .sum.zero{color:#888;text-shadow:none}
+.total .calc{font-size:13px;font-weight:800;opacity:.75}
+.notebox{margin-top:12px}
+.notebox summary{cursor:pointer;font-weight:900;font-size:13px;opacity:.7;list-style:none}
+.notebox summary::-webkit-details-marker{display:none}
+.notebox input{margin-top:6px}
 .preview{
   margin-top:16px;padding:12px;border:3px dashed var(--ink);border-radius:12px;background:#fff3c4;
   font-weight:900;text-align:center;font-size:16px
@@ -369,30 +416,32 @@ body.ro .lockbtn{background:#fff}
     <!-- 1) zápis další hry – úplně nahoře, je to nejčastější práce -->
     <div class="panel hidden edit-only" id="form-panel">
       <div class="tape"></div>
-      <h2>🃏 Další hra</h2>
-      <div class="dayline" id="dayline"></div>
+      <div class="fhead"><h2>🃏 Další hra</h2><div class="dayline" id="dayline"></div></div>
 
-      <label class="lbl"><span class="step">1</span> 🏆 Kdo zavřel (vítěz)</label>
-      <div class="seats" id="pick-win"></div>
+      <!-- lehké přepínače: kdo zavřel / kdo zůstal -->
+      <div class="pick"><span class="plbl">🏆 Zavřel</span><div class="seats sm" id="pick-win"></div></div>
+      <div class="pick"><span class="plbl">💧 Zůstal</span><div class="seats sm" id="pick-lose"></div></div>
 
-      <label class="lbl"><span class="step">2</span> 💧 Kdo zůstal s kartami (poražený)</label>
-      <div class="seats" id="pick-lose"></div>
-
-      <label class="lbl"><span class="step">3</span> 🃏 Kolik bodů měl poražený v ruce</label>
-      <div class="pts">
-        <button class="btn sq" data-pt="-1">−</button>
-        <input id="pts" type="number" inputmode="numeric" min="0" max="999" placeholder="?">
-        <button class="btn sq" data-pt="1">+</button>
-        <span style="font-weight:900">bodů</span>
+      <!-- hlavní prvek: body + násobek hned vedle -->
+      <div class="scorebox">
+        <label class="ptsbig">
+          <input id="pts" type="number" inputmode="numeric" min="0" max="999" placeholder="0" aria-label="Body v ruce poraženého">
+          <span>bodů v ruce</span>
+        </label>
+        <div class="mults" id="pick-mult"></div>
       </div>
-      <input id="pts-range" type="range" min="0" max="120" step="1" value="0" aria-label="Body v ruce">
+      <div class="slider">
+        <button class="btn sq" data-pt="-1" aria-label="o bod méně">−</button>
+        <input id="pts-range" type="range" min="0" max="120" step="1" value="0" aria-label="Body v ruce">
+        <button class="btn sq" data-pt="1" aria-label="o bod víc">+</button>
+      </div>
 
-      <label class="lbl"><span class="step">4</span> ✖️ Jak vítěz zavřel – násobek</label>
-      <div class="mults" id="pick-mult"></div>
+      <!-- výrazná celková částka -->
+      <div class="total" id="preview"></div>
 
-      <input class="txt" id="note" maxlength="120" placeholder="✍️ Poznámka (nepovinné)" style="margin-top:16px">
-
-      <div class="preview" id="preview"></div>
+      <details class="notebox"><summary>✍️ Poznámka (nepovinné)</summary>
+        <input class="txt" id="note" maxlength="120" placeholder="např. „Hrálo se pod stolem, protože pršelo i dovnitř“">
+      </details>
       <button class="big" id="save">💸 ZAPLAŤ, NEŠŤASTNÍKU!</button>
     </div>
 
@@ -1034,17 +1083,15 @@ function renderForm(){
 
   const ok = ui.winner && ui.loser && ui.winner!==ui.loser && ui.points!==null;
   $('#save').disabled = !ok;
-  if(ok){
-    const c = calc(ui.points, ui.mult);
-    $('#preview').innerHTML = `
-      <div class="who">${tok(P(ui.loser),'l')} <span>💸➡️</span> ${tok(P(ui.winner),'l')}</div>
-      <div style="margin-top:6px">${esc(P(ui.loser).name)} platí ${esc(P(ui.winner).name)}</div>
-      <div class="calc">${ui.points} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${numC(ui.mult)}${c.base*ui.mult!==c.stake?` = ${numC(c.base*ui.mult)} ≈ ${c.stake}`:''}</div>
-      <div class="sum">${money(c.stake)}</div>`;
-  }else{
-    const miss = !ui.winner ? 'kdo zavřel' : !ui.loser ? 'kdo zůstal s kartami' : 'kolik bodů měl v ruce';
-    $('#preview').innerHTML = `🤷 Ještě chybí: <u>${miss}</u>. Pak teprve zaprší peníze.`;
-  }
+  // částka se počítá živě už při posouvání, i když ještě nejsou vybraní hráči
+  const pts = ui.points ?? 0, c = calc(pts, ui.mult);
+  const L = ui.loser ? `${tok(P(ui.loser),'s')} ${esc(P(ui.loser).name)}` : '<span class="q">💧 kdo zůstal?</span>';
+  const W = ui.winner ? `${tok(P(ui.winner),'s')} ${esc(P(ui.winner).name)}` : '<span class="q">🏆 kdo zavřel?</span>';
+  $('#preview').innerHTML = `
+    <div class="who">${L} <span>💸➡️</span> ${W}</div>
+    <div class="sum${ui.points===null?' zero':''}">${money(c.stake)}</div>
+    <div class="calc">${ui.points===null ? 'posuň body v ruce' :
+      `${pts} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${numC(ui.mult)}${c.base*ui.mult!==c.stake?` = ${numC(c.base*ui.mult)} ≈ ${c.stake}`:''}`}</div>`;
 }
 
 function readMultDraft(){
