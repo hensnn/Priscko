@@ -3,12 +3,14 @@
 Sčítání her v prší. Po každém kole platí poražený (zůstal s kartami) vítězi (zavřel):
 
 ```
-platba = body v ruce poraženého × násobek zavření × cena bodu
+platba = zaokrouhlit(body v ruce poraženého × koeficient) × násobek zavření
 ```
 
 - **Body v ruce** – posuvník nebo pole (0–999)
 - **Násobek** – ×1, ×2, ×3, ×4 (např. zavření červeným svrškem = ×4)
-- **Cena bodu** – v Nastavení, výchozí 1 Kč
+- **Koeficient platby** – v Nastavení, výchozí 0,1 (zaokrouhluje se na celé, 0,5 nahoru)
+
+Příklad s koeficientem 0,1: 67 b → 6,7 → **7** × 2 = **14** · 64 b → 6,4 → **6** × 2 = **12**
 
 Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádává se pouze vítěz s poraženým.
 
@@ -72,8 +74,3 @@ Pak `systemctl reload caddy`.
 
 Pokud chceš vlastní adresu (např. `prsi.duckdns.org`), přidej v Nginx Proxy Manageru nový Proxy Host stejně jako u šachů a v Caddy na něj nasměruj kořen `/var/www/html/prsicko`.
 
-## Příznaky kola
-
-Sedmičková smršť 7️⃣ · Eso stojí 🛑 · Svršek na konec 🔀 · Plná ruka 🤲 · Bleskovka ⚡ · Nekonečný liják 🌧️ · Podezření z podvodu 🕵️ · Polito pivem 🍺 · Usnul u stolu 😴 · Kecal do karet 🗣️ · Odveta 🔁 · Zázrak 🦄
-
-Další se přidávají v `index.html` v poli `FLAGS`.

@@ -143,7 +143,6 @@ label.lbl{display:flex;align-items:center;gap:8px;font-weight:900;margin:18px 0 
 .chip.plain{padding:7px 12px}
 .chip:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 .chip.on{background:var(--mustard)}
-.chip.flag.on{background:var(--sky)}
 .chip .em{font-size:18px}
 
 /* žetony u stolu */
@@ -328,7 +327,7 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
     <!-- formulář nového kola (jen když den běží) -->
     <div class="panel hidden" id="form-panel">
       <h2>🃏 Nové kolo</h2>
-      <p class="sub">Body v ruce poraženého × násobek zavření = kolik platí vítězi.</p>
+      <p class="sub">Body v ruce poraženého × koeficient, zaokrouhlit, × násobek zavření = kolik platí vítězi.</p>
 
       <label class="lbl"><span class="step">1</span> Kdo sedí u stolu?</label>
       <div class="chips" id="pick-part"></div>
@@ -351,10 +350,7 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
       <label class="lbl"><span class="step">5</span> ✖️ Jak vítěz zavřel – násobek</label>
       <div class="mults" id="pick-mult"></div>
 
-      <label class="lbl"><span class="step">6</span> 🏷️ Příznaky kola <span style="opacity:.5;font-weight:700">(nepovinné)</span></label>
-      <div class="chips" id="pick-flags"></div>
-
-      <label class="lbl"><span class="step">7</span> ✍️ Poznámka pro budoucí archeology</label>
+      <label class="lbl"><span class="step">6</span> ✍️ Poznámka pro budoucí archeology</label>
       <input class="txt" id="note" maxlength="120" placeholder="např. „Hrálo se pod stolem, protože pršelo i dovnitř“">
 
       <div class="preview" id="preview"></div>
@@ -417,13 +413,13 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
     </div>
     <div class="panel">
       <h2>⚙️ Nastavení</h2>
-      <label class="lbl">Cena jednoho bodu</label>
+      <label class="lbl">Koeficient platby</label>
       <div style="display:flex;gap:8px">
-        <input class="txt" id="set-pv" type="number" inputmode="decimal" min="0.01" step="0.01" style="max-width:140px">
+        <input class="txt" id="set-pv" type="number" inputmode="decimal" min="0.001" step="0.01" style="max-width:140px">
         <input class="txt" id="set-cur" maxlength="8" style="max-width:100px">
         <button class="btn ok" id="save-set">Uložit</button>
       </div>
-      <p class="sub" style="margin-top:8px">Platí se: body × násobek × cena bodu. Změna platí jen pro nová kola.</p>
+      <p class="sub" style="margin-top:8px">Platba = zaokrouhlit(body × koeficient) × násobek.<br>Př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14 · 64 b → 6,4 → 6 × 2 = 12.<br>Změna platí jen pro nové hry.</p>
       <label class="lbl">Záloha</label>
       <button class="btn" id="export">⬇️ Stáhnout databázi (JSON)</button>
     </div>
@@ -480,21 +476,6 @@ const MULTS = [
   {m:4, t:'červeným svrškem'},
 ];
 
-/* --- příznaky kola --- */
-const FLAGS = [
-  {id:'sedmy',   i:'7️⃣',  t:'Sedmičková smršť'},
-  {id:'eso',     i:'🛑',  t:'Eso stojí'},
-  {id:'plna',    i:'🤲',  t:'Plná ruka'},
-  {id:'blesk',   i:'⚡',  t:'Bleskovka'},
-  {id:'lijak',   i:'🌧️', t:'Nekonečný liják'},
-  {id:'podvod',  i:'🕵️', t:'Podezření z podvodu'},
-  {id:'pivo',    i:'🍺',  t:'Polito pivem'},
-  {id:'spanek',  i:'😴',  t:'Usnul u stolu'},
-  {id:'kecal',   i:'🗣️', t:'Kecal do karet'},
-  {id:'odveta',  i:'🔁',  t:'Odveta'},
-  {id:'zazrak',  i:'🦄',  t:'Zázrak'},
-];
-const flagById = id => FLAGS.find(f=>f.id===id) || {i:'🏷️',t:id};
 
 const QUOTES = [
   'Výstraha: místy přívalové sedmy, ojediněle červený svršek.',
@@ -541,7 +522,7 @@ function tok(p, size){
 
 /* --- stav --- */
 let db = null, online = true, busy = false;
-let ui = {participants:[], winner:null, loser:null, points:null, mult:1, flags:[]};
+let ui = {participants:[], winner:null, loser:null, points:null, mult:1};
 ui.participants = (safeJSON(ls.get(LS_UI))||{}).participants || [];
 
 function safeJSON(s){ try{return JSON.parse(s)}catch(e){return null} }
@@ -552,7 +533,14 @@ const P = id => db.players.find(p=>p.id===id) || {name:'??', id};
 const num = v => (Math.round(v*100)/100).toLocaleString('cs-CZ',{maximumFractionDigits:2});
 const moneyTxt = v => num(v) + ' ' + (db.settings.currency||'Kč');
 const money = v => esc(moneyTxt(v));
-const pv = () => +db.settings.pointValue || 1;
+const pv = () => (+db.settings.pointValue > 0 ? +db.settings.pointValue : 0.1);
+// platba = zaokrouhlit(body × koeficient) × násobek  (6,5 → 7)
+function calc(points, mult, coef = pv()){
+  const raw = Math.round(points*coef*10000)/10000;
+  const base = Math.round(raw + 1e-9);
+  return {raw, base, stake: base*mult};
+}
+const numC = v => v.toLocaleString('cs-CZ',{maximumFractionDigits:4});
 const fmtTime = ts => new Date(ts*1000).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
 const pad = n => String(n).padStart(2,'0');
 const isoDate = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -562,7 +550,7 @@ const parseIso = s => { const [y,m,d]=s.split('-').map(Number); return new Date(
 /* =========================================================
    Data – server nebo offline
    ========================================================= */
-function emptyDb(){ return {players:[],sessions:[],games:[],settlements:[],settings:{pointValue:1,currency:'Kč'},rev:0}; }
+function emptyDb(){ return {players:[],sessions:[],games:[],settlements:[],settings:{pointValue:0.1,currency:'Kč'},rev:0}; }
 function normalize(d){
   d = Object.assign(emptyDb(), d||{});
   d.settings = Object.assign(emptyDb().settings, d.settings||{});
@@ -644,9 +632,9 @@ function applyLocal(o){
       const mult = parseInt(o.mult,10);
       if(![1,2,3,4].includes(mult)) return 'Násobek může být jen ×1–×4';
       const parts=[...new Set([...(o.participants||[]).filter(has),o.winner,o.loser])];
+      const c = calc(points, mult);
       db.games.push({id:uid(),sessionId:open.id,ts:now,participants:parts,winner:o.winner,loser:o.loser,
-        points,mult,pointValue:pv(),stake:Math.round(points*mult*pv()*100)/100,
-        flags:o.flags||[],note:(o.note||'').slice(0,120)}); break;
+        points,mult,pointValue:pv(),base:c.base,stake:c.stake,note:(o.note||'').slice(0,120)}); break;
     }
     case 'delete_game': db.games = db.games.filter(g=>g.id!==o.id); break;
     case 'settle':
@@ -654,8 +642,8 @@ function applyLocal(o){
       db.settlements.push({id:uid(),ts:now,from:o.from,to:o.to,amount:+o.amount}); break;
     case 'delete_settlement': db.settlements = db.settlements.filter(s=>s.id!==o.id); break;
     case 'settings':
-      if(!(+o.pointValue>0)) return 'Cena bodu musí být větší než 0';
-      db.settings.pointValue = Math.round(+o.pointValue*100)/100;
+      if(!(+o.pointValue>0)) return 'Koeficient musí být větší než 0';
+      db.settings.pointValue = Math.round(+o.pointValue*10000)/10000;
       if(o.currency) db.settings.currency = String(o.currency).slice(0,8); break;
     default: return 'Neznámá akce';
   }
@@ -768,7 +756,7 @@ function debtsHtml(list, withSettle){
 
 function gameHtml(g, n){
   const others = g.participants.filter(id=>id!==g.winner&&id!==g.loser);
-  const calc = g.points!=null ? `${g.points} b × ${g.mult||1}` : '';
+  const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b → ${g.base} × ${g.mult||1}` : `${g.points} b × ${g.mult||1}`) : '';
   return `<div class="hg">
     <div class="top"><span>Hra č. ${n}</span><span>${fmtTime(g.ts)}</span></div>
     <div class="main">
@@ -776,12 +764,10 @@ function gameHtml(g, n){
       <span>🏆 ${tok(P(g.winner),'s')} ${esc(P(g.winner).name)}</span>
       <span style="opacity:.5">vs</span>
       <span>💧 ${tok(P(g.loser),'s')} ${esc(P(g.loser).name)}</span>
-      <span class="amt">${money(g.stake)}${calc?`<small>${calc}</small>`:''}</span>
+      <span class="amt">${money(g.stake)}${calcTxt?`<small>${calcTxt}</small>`:''}</span>
     </div>
     ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
-    ${(g.mult>1 || (g.flags||[]).length)?`<div class="fl">
-      ${g.mult>1?`<span class="tag m">✖️${g.mult} ${MULTS[g.mult-1].t}</span>`:''}
-      ${(g.flags||[]).map(f=>`<span class="tag">${flagById(f).i} ${esc(flagById(f).t)}</span>`).join('')}</div>`:''}
+    ${g.mult>1?`<div class="fl"><span class="tag m">✖️${g.mult} ${MULTS[g.mult-1].t}</span></div>`:''}
     ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
     <div style="text-align:right;margin-top:6px"><button class="btn small danger" data-delg="${g.id}">🗑️ Smazat</button></div>
   </div>`;
@@ -863,18 +849,15 @@ function renderForm(){
   $('#pick-mult').innerHTML = MULTS.map(x=>
     `<button type="button" class="mult${ui.mult===x.m?' on':''}" data-mult="${x.m}"><b>×${x.m}</b>${x.t}</button>`).join('');
 
-  $('#pick-flags').innerHTML = FLAGS.map(f=>chip('flag plain',ui.flags.includes(f.id),
-      `<span class="em">${f.i}</span>${f.t}`,`data-flag="${f.id}"`)).join('');
-
   const ok = ui.winner && ui.loser && ui.winner!==ui.loser && ui.points!==null;
   $('#save').disabled = !ok;
   if(ok){
-    const total = ui.points * ui.mult;
+    const c = calc(ui.points, ui.mult);
     $('#preview').innerHTML = `
       <div class="who">${tok(P(ui.loser),'l')} <span>💸➡️</span> ${tok(P(ui.winner),'l')}</div>
       <div style="margin-top:6px">${esc(P(ui.loser).name)} platí ${esc(P(ui.winner).name)}</div>
-      <div class="calc">${ui.points} b × ${ui.mult} = ${total} b${pv()!==1?` × ${money(pv())}`:''}</div>
-      <div class="sum">${money(total*pv())}</div>`;
+      <div class="calc">${ui.points} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${ui.mult}</div>
+      <div class="sum">${money(c.stake)}</div>`;
   }else{
     const miss = !ui.winner ? 'kdo zavřel' : !ui.loser ? 'kdo zůstal s kartami' : 'kolik bodů měl v ruce';
     $('#preview').innerHTML = `🤷 Ještě chybí: <u>${miss}</u>. Pak teprve zaprší peníze.`;
@@ -907,17 +890,16 @@ function renderBilance(){
     : `<div class="empty" style="padding:8px">Zatím nikdo nic nesplatil. Typické.</div>`;
 
   // statistiky
-  const g = db.games, cnt = {}, wins={}, losses={}, plays={}, pts={};
+  const g = db.games, wins={}, losses={}, plays={}, pts={};
   g.forEach(x=>{
     wins[x.winner]=(wins[x.winner]||0)+1; losses[x.loser]=(losses[x.loser]||0)+1;
     pts[x.loser]=(pts[x.loser]||0)+(x.points||0);
     x.participants.forEach(id=>plays[id]=(plays[id]||0)+1);
-    (x.flags||[]).forEach(f=>cnt[f]=(cnt[f]||0)+1);
   });
   const top = o => { let k=null,v=0; for(const i in o) if(o[i]>v){v=o[i];k=i} return k?{k,v}:null; };
   const days = allDays().filter(d=>d.closedTs && d.games.length);
   const kings = {}; days.forEach(d=>{ const r=ranking(d.games); if(r[0]&&r[0].v>0) kings[r[0].id]=(kings[r[0].id]||0)+1; });
-  const tw=top(wins), tl=top(losses), tf=top(cnt), tpt=top(pts), tk=top(kings);
+  const tw=top(wins), tl=top(losses), tpt=top(pts), tk=top(kings);
   const pot = g.reduce((s,x)=>s+x.stake,0);
   const biggest = g.reduce((m,x)=>!m||x.stake>m.stake?x:m,null);
   const x4w = {}; g.filter(x=>x.mult===4).forEach(x=>x4w[x.winner]=(x4w[x.winner]||0)+1); const tx4 = top(x4w);
@@ -932,7 +914,6 @@ function renderBilance(){
     ['🔴', tx4?nm(tx4.k):'—', tx4?`král ×4 zavření (${tx4.v}×)`:'král ×4 zavření'],
     ['🎒', tpt?nm(tpt.k):'—', tpt?`nejvíc bodů v ruce (${tpt.v} b)`:'nejvíc bodů v ruce'],
     ['🌊', biggest?money(biggest.stake):'—', biggest?`největší liják (${biggest.points??'?'} b × ${biggest.mult??1})`:'největší liják v jedné hře'],
-    ['🏷️', tf?`${flagById(tf.k).i} ${tf.v}×`:'—', tf?flagById(tf.k).t:'nejčastější příznak'],
   ].map(([i,b,s])=>`<div class="stat"><span>${i} ${s}</span><b>${b}</b></div>`).join('');
 }
 
@@ -1051,20 +1032,16 @@ document.addEventListener('click', async e=>{
   if(d.win){ ui.winner = ui.winner===d.win?null:d.win; renderForm(); return; }
   if(d.lose){ ui.loser = ui.loser===d.lose?null:d.lose; renderForm(); return; }
   if(d.mult){ ui.mult = +d.mult; if(ui.mult===4) toast(rnd(MULT4_MSGS)); renderForm(); return; }
-  if(d.flag){
-    ui.flags = ui.flags.includes(d.flag) ? ui.flags.filter(x=>x!==d.flag) : [...ui.flags,d.flag];
-    renderForm(); return;
-  }
   if(d.pt){ setPoints((ui.points||0) + (+d.pt)); return; }
 
   if(t.id==='save'){
-    const w=P(ui.winner), l=P(ui.loser), amt=moneyTxt(ui.points*ui.mult*pv());
+    const w=P(ui.winner), l=P(ui.loser), amt=moneyTxt(calc(ui.points,ui.mult).stake);
     const ok = await op({action:'add_game',participants:ui.participants,winner:ui.winner,loser:ui.loser,
-      points:ui.points,mult:ui.mult,flags:ui.flags,note:$('#note').value});
+      points:ui.points,mult:ui.mult,note:$('#note').value});
     if(ok){
       rain(ui.mult===4 ? 50 : 26);
       toast('💸 ' + rnd(PAY_MSGS)(l.name, w.name, amt));
-      ui.winner=null; ui.loser=null; ui.points=null; ui.mult=1; ui.flags=[]; $('#note').value='';
+      ui.winner=null; ui.loser=null; ui.points=null; ui.mult=1; $('#note').value='';
       renderForm(); ticker();
       window.scrollTo({top:0,behavior:'smooth'});
     }

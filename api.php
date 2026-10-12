@@ -17,8 +17,8 @@ function empty_db() {
         'sessions'    => [],
         'games'       => [],
         'settlements' => [],
-        // pointValue = kolik stojí jeden bod (body v ruce poraženého × násobek × pointValue)
-        'settings'    => ['pointValue' => 1, 'currency' => 'Kč'],
+        // pointValue = koeficient platby; platba = round(body × koeficient) × násobek
+        'settings'    => ['pointValue' => 0.1, 'currency' => 'Kč'],
         'rev'         => 0,
     ];
 }
@@ -127,17 +127,18 @@ switch ($in['action']) {
         $w = $in['winner'] ?? ''; $l = $in['loser'] ?? '';
         if (!$hasPlayer($w) || !$hasPlayer($l)) fail(400, 'Neznámý vítěz nebo poražený');
         if ($w === $l) fail(400, 'Nemůžeš vyhrát sám nad sebou (i když by to bylo absurdní)');
-        // Body v ruce poraženého × násobek zavření (×1–×4) × cena bodu
+        // platba = zaokrouhlit(body v ruce poraženého × koeficient) × násobek zavření (×1–×4)
+        // př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14;  64 b → 6,4 → 6 × 2 = 12
         $points = (int)($in['points'] ?? -1);
         if ($points < 0 || $points > 999) fail(400, 'Body v ruce musí být 0–999');
         $mult = (int)($in['mult'] ?? 1);
         if (!in_array($mult, [1, 2, 3, 4], true)) fail(400, 'Násobek může být jen ×1, ×2, ×3 nebo ×4');
         $pv = (float)$db['settings']['pointValue'];
-        $stake = round($points * $mult * $pv, 2);
+        $base = (int)round($points * $pv + 1e-9);   // +1e-9 kvůli 6,5 → 7 (float nepřesnost)
+        $stake = $base * $mult;
         $parts = array_values(array_unique(array_filter((array)($in['participants'] ?? []), $hasPlayer)));
         if (!in_array($w, $parts, true)) $parts[] = $w;
         if (!in_array($l, $parts, true)) $parts[] = $l;
-        $flags = array_values(array_slice(array_map(function ($f) { return clean_str($f, 24); }, (array)($in['flags'] ?? [])), 0, 20));
         $db['games'][] = [
             'id'           => uid(),
             'sessionId'    => $db['sessions'][$si]['id'],
@@ -148,8 +149,8 @@ switch ($in['action']) {
             'points'       => $points,
             'mult'         => $mult,
             'pointValue'   => $pv,
+            'base'         => $base,
             'stake'        => $stake,
-            'flags'        => $flags,
             'note'         => clean_str($in['note'] ?? '', 120),
         ];
         break;
@@ -170,8 +171,8 @@ switch ($in['action']) {
         break;
 
     case 'settings':
-        $pv = round((float)($in['pointValue'] ?? $db['settings']['pointValue']), 2);
-        if ($pv <= 0 || $pv > 10000) fail(400, 'Cena bodu musí být větší než 0');
+        $pv = round((float)($in['pointValue'] ?? $db['settings']['pointValue']), 4);
+        if ($pv <= 0 || $pv > 10000) fail(400, 'Koeficient musí být větší než 0');
         $db['settings']['pointValue'] = $pv;
         $cur = clean_str($in['currency'] ?? $db['settings']['currency'], 8);
         if ($cur !== '') $db['settings']['currency'] = $cur;
