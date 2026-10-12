@@ -1,4 +1,4 @@
-# ☔ Prsíčko
+# ☔ Prsíčko 2.0
 
 Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace bez databázového serveru – stačí `index.html`, `api.php` a jeden JSON soubor.
 
@@ -9,6 +9,7 @@ Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace
 - 🃏 **Herní den** – večer se otevře den, hry se zapisují pod něj, po ukončení vznikne žebříček dne.
 - 🎚️ **Rychlý zápis** – vítěz, poražený, body v ruce (posuvník) a násobek; částka se počítá živě.
 - 💰 **Platba** – body × koeficient, zaokrouhlit na celé, × násobek zavření.
+- 📃 **Přehled her** – každá hra na jeden řádek: 🏆 vítěz · 💧 poražený · částka, detail na ťuknutí.
 - 📅 **Bilance** – výsledky po dnech, celkový žebříček, kdo komu dluží, statistiky.
 - 🤝 **Vyrovnání** – dluhy mezi dvojicí se vzájemně odečtou, zaplacené se odškrtnou.
 - 🎯 **Zkratky hráčů** – u stolu se hráč ukazuje jedinečnou zkratkou.

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14532d">
-<title>Prsíčko ☔ Úřad pro evidenci deště karet</title>
+<title>Prsíčko 2.0 ☔ Úřad pro evidenci deště karet</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☔</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
@@ -32,9 +32,18 @@ button,input,select{font:inherit;color:inherit}
 /* ---------- HLAVIČKA ---------- */
 header{position:relative;padding:18px 0 6px;text-align:center}
 .cloud{font-size:42px;display:inline-block;animation:bob 3s ease-in-out infinite}
+.robin{display:block;width:min(230px,62vw);margin:0 auto -6px;animation:bob 3s ease-in-out infinite;overflow:visible}
+.titlewrap{position:relative;display:inline-block;padding-right:50px}
+.ver{
+  position:absolute;right:-4px;top:-20px;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
+  background:var(--red);color:#fff;font-family:var(--display);font-size:27px;letter-spacing:1px;
+  border:3px solid var(--ink);box-shadow:3px 3px 0 var(--ink);transform:rotate(14deg);
+  -webkit-text-stroke:1px var(--ink);paint-order:stroke fill;animation:wob 2.4s ease-in-out infinite
+}
+@keyframes wob{50%{transform:rotate(-6deg) scale(1.08)}}
 @keyframes bob{50%{transform:translateY(-6px) rotate(-6deg)}}
 h1{
-  font-family:var(--display); font-size:clamp(56px,16vw,96px); line-height:.9;
+  font-family:var(--display); font-size:clamp(50px,13.5vw,96px); line-height:.9;
   margin:0; letter-spacing:3px; color:var(--mustard);
   -webkit-text-stroke:3px var(--ink); paint-order:stroke fill;
   text-shadow:6px 6px 0 var(--ink); transform:rotate(-4deg);
@@ -303,6 +312,20 @@ table.daytbl{border-collapse:separate;border-spacing:0;width:100%;font-weight:80
 .daytbl tfoot td{border-top:3px solid var(--ink);border-bottom:0;font-family:var(--display);font-weight:400;font-size:18px;background:#fff3c4}
 .daytbl tfoot tr+tr td{font-family:"Nunito";font-weight:900;font-size:13px;background:#fff}
 /* úpravy */
+.glist{border:3px solid var(--ink);border-radius:14px;background:#fff;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+.glegend{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;opacity:.65;padding:6px 10px;background:#f6f1e3}
+.grow{display:flex;align-items:center;gap:7px;padding:7px 10px;border-top:2px dashed #e8e2d2;cursor:pointer}
+.grow:active{background:#fff3c4}
+.grow.open{background:#fff3c4}
+.gn{width:26px;flex:none;text-align:right;font-family:var(--display);font-size:16px;opacity:.45}
+.gw,.gl{display:inline-flex;align-items:center;gap:3px;border-radius:999px;padding:2px 9px 2px 6px;font-weight:900;font-size:15px;white-space:nowrap}
+.gw{background:#d9f7de;border:2px solid #15803d;color:#0f5a2a}
+.gl{background:#ffe0e0;border:2px solid var(--red);color:#9b1c1c}
+.gm{font-family:var(--display);font-size:15px;background:var(--red);color:#fff;border-radius:8px;padding:1px 6px;letter-spacing:.5px}
+.gnote{font-size:13px;opacity:.6}
+.ga{margin-left:auto;font-family:var(--display);font-size:24px;color:var(--ink);white-space:nowrap}
+.gdet{background:#fff8d6;padding:4px 12px 10px 43px;font-size:13px;font-weight:700;display:flex;flex-direction:column;gap:3px}
+.glist .hg.editing{margin:8px;border-radius:12px}
 .hg.editing{background:#fffbe6;outline:3px dashed var(--mustard);outline-offset:-8px;transform:none!important}
 .hg.editing .pick{margin-top:8px}
 .hg.editing .chips .tok{cursor:pointer}
@@ -416,15 +439,55 @@ body.ro .lockbtn{background:#fff}
 @keyframes pop{from{transform:translateX(-50%) scale(.6) rotate(8deg);opacity:0}}
 .foot{text-align:center;color:#d8f3dc;font-size:12px;font-weight:700;opacity:.8;margin:20px 0}
 @media (prefers-reduced-motion:reduce){
-  .cloud,.drop,.pill.live{animation:none!important}.drop{display:none}
+  .cloud,.drop,.pill.live,.robin,.ver{animation:none!important}.drop{display:none}
 }
 </style>
 </head>
 <body>
 
 <header class="wrap">
-  <div class="cloud" aria-hidden="true">🌧️</div>
-  <h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1>
+  <!-- maskot: červenka – ptáček proslulý svým oranžovým prsíčkem -->
+  <svg class="robin" viewBox="0 0 210 150" role="img" aria-label="Červenka s prsíčkem pod deštníkem">
+    <g fill="#7cc6fe" stroke="#1b1b1b" stroke-width="1.5">
+      <path d="M18 34q5 8 0 12q-5-4 0-12z"/><path d="M178 18q5 8 0 12q-5-4 0-12z"/>
+      <path d="M196 64q5 8 0 12q-5-4 0-12z"/><path d="M10 96q5 8 0 12q-5-4 0-12z"/><path d="M30 64q4 6 0 9q-4-3 0-9z"/>
+    </g>
+    <!-- deštník -->
+    <path d="M38 56 Q90 -4 142 56 Z" fill="#d62828" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M90 22 Q72 34 64 56 M90 22 Q108 34 116 56" fill="none" stroke="#1b1b1b" stroke-width="2.5"/>
+    <path d="M38 56 Q51 48 64 56 Q77 48 90 56 Q103 48 116 56 Q129 48 142 56" fill="#fff8e7" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M90 22 V50" stroke="#1b1b1b" stroke-width="3"/>
+    <path d="M90 56 V98 Q90 106 82 104" fill="none" stroke="#1b1b1b" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- ocas -->
+    <path d="M60 112 L34 128 L62 126 Z" fill="#6b4226" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
+    <!-- tělo + hlava -->
+    <ellipse cx="94" cy="110" rx="37" ry="30" fill="#8a5a3c" stroke="#1b1b1b" stroke-width="3"/>
+    <circle cx="114" cy="84" r="20" fill="#8a5a3c" stroke="#1b1b1b" stroke-width="3"/>
+    <ellipse cx="96" cy="106" rx="26" ry="18" fill="#8a5a3c"/>
+    <!-- TO PRSÍČKO -->
+    <ellipse cx="108" cy="108" rx="23" ry="21" fill="#ff6b1a" stroke="#1b1b1b" stroke-width="2.5"/>
+    <ellipse cx="101" cy="100" rx="7" ry="5" fill="#fff" opacity=".55" transform="rotate(-25 101 100)"/>
+    <!-- oko, tvář, zobák -->
+    <circle cx="120" cy="80" r="6" fill="#fff" stroke="#1b1b1b" stroke-width="2"/>
+    <circle cx="121.5" cy="80" r="3" fill="#1b1b1b"/>
+    <path d="M115 72 l2 -4 M119 71 l1 -5 M123 72 l2 -4" stroke="#1b1b1b" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="124" cy="91" r="3.5" fill="#ff8fab" opacity=".8"/>
+    <path d="M131 84 L146 88 L131 93 Z" fill="#f4b400" stroke="#1b1b1b" stroke-width="2" stroke-linejoin="round"/>
+    <!-- křídlo s kartou -->
+    <g transform="rotate(-18 66 94)">
+      <rect x="58" y="80" width="17" height="24" rx="3" fill="#fff8e7" stroke="#1b1b1b" stroke-width="2"/>
+      <path d="M66.5 96s-4-2.5-4-5.2c0-1.5 1.1-2.4 2.3-2.4 .8 0 1.4.4 1.7 1 .3-.6.9-1 1.7-1 1.2 0 2.3.9 2.3 2.4 0 2.7-4 5.2-4 5.2z" fill="#d62828"/>
+    </g>
+    <path d="M66 104 Q80 92 96 106 Q84 124 64 116 Z" fill="#6b4226" stroke="#1b1b1b" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- nožky -->
+    <path d="M88 139 l-2 9 m-4 0 h8 M102 139 l2 9 m-4 0 h8" stroke="#f4b400" stroke-width="3" stroke-linecap="round"/>
+    <!-- popisek -->
+    <path d="M168 116 Q156 124 136 114" fill="none" stroke="#f4b400" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M136 114 l9 -2 m-9 2 l5 7" stroke="#f4b400" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="186" y="98" text-anchor="middle" fill="#f4b400" font-family="Bangers, Impact, sans-serif" font-size="15" transform="rotate(-8 186 104)">
+      <tspan x="186">to je to</tspan><tspan x="186" dy="16">prsíčko!</tspan></text>
+  </svg>
+  <div class="titlewrap"><h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1><span class="ver" aria-label="verze 2.0">2.0</span></div>
   <div class="stamp">☔ Úřad pro evidenci deště karet · prší, nebo platíš</div>
   <div class="fan" id="fan" aria-hidden="true"></div>
   <div class="ticker" id="ticker">Načítám předpověď…</div>
@@ -1060,34 +1123,39 @@ function gameEditorHtml(g, n){
     </div>
   </div>`;
 }
+// jedna hra = jeden stručný řádek: č. · 🏆 vítěz · 💧 poražený · (násobek) · částka; ťuknutím detail
+let openGameId = null;
 function gameHtml(g, n){
   if(edit && edit.id===g.id) return gameEditorHtml(g, n);
+  const W = P(g.winner), L = P(g.loser), open = openGameId===g.id;
+  const row = `<div class="grow${open?' open':''}" data-gopen="${g.id}">
+      <span class="gn">${n}.</span>
+      <span class="gw">🏆 ${esc(abbrOf(W))}</span>
+      <span class="gl">💧 ${esc(abbrOf(L))}</span>
+      ${+g.mult!==1?`<span class="gm">×${numC(+g.mult)}</span>`:''}
+      ${g.note?'<span class="gnote">✍️</span>':''}
+      <span class="ga">${num(g.stake)}</span>
+    </div>`;
+  if(!open) return row;
   const others = g.participants.filter(id=>id!==g.winner&&id!==g.loser);
-  const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b → ${g.base} × ${numC(+g.mult||1)}` : `${g.points} b × ${numC(+g.mult||1)}`) : '';
-  return `<div class="hg">
-    <div class="top"><span>Hra č. ${n}</span><span>${fmtTime(g.ts)}</span></div>
-    <div class="main">
-      ${card(SUIT_KEYS[n%4], VAL_POOL[n%8], true)}
-      <span>🏆 ${tok(P(g.winner),'s')} ${esc(P(g.winner).name)}</span>
-      <span style="opacity:.5">vs</span>
-      <span>💧 ${tok(P(g.loser),'s')} ${esc(P(g.loser).name)}</span>
-      <span class="amt">${money(g.stake)}${calcTxt?`<small>${calcTxt}</small>`:''}</span>
-    </div>
-    ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
-    ${+g.mult!==1?`<div class="fl"><span class="tag m">✖️${numC(+g.mult)} ${esc(g.multLabel||multLabel(g.mult))}</span></div>`:''}
-    ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px">
-      <span class="edited">${g.editedTs?'✏️ upraveno '+fmtTime(g.editedTs):''}</span>
-      <span class="edit-only" style="display:flex;gap:6px">
+  const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b × ${numC(g.pointValue ?? pv())} ≈ ${g.base} · × ${numC(+g.mult||1)}` : `${g.points} b × ${numC(+g.mult||1)}`) : '';
+  return row + `<div class="gdet">
+      <div>🏆 <b>${esc(W.name)}</b> · 💧 <b>${esc(L.name)}</b> · platí <b>${money(g.stake)}</b></div>
+      <div>${calcTxt}${+g.mult!==1?` (${esc(g.multLabel||multLabel(g.mult))})`:''} · ${fmtTime(g.ts)}${g.editedTs?' · ✏️ upraveno':''}</div>
+      ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
+      ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
+      <div class="edit-only" style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
         <button class="btn small" data-edg="${g.id}">✏️ Upravit</button>
         <button class="btn small danger" data-delg="${g.id}">🗑️ Smazat</button>
-      </span>
-    </div>
-  </div>`;
+      </div>
+    </div>`;
 }
 function gamesList(games){
   const sorted = [...games].sort((a,b)=>a.ts-b.ts);
-  return sorted.map((g,i)=>({g,n:i+1})).reverse().map(x=>gameHtml(x.g,x.n)).join('');
+  return `<div class="glist">
+    <div class="glegend"><span>🏆 vyhrál · 💧 prohrál · částka v ${esc(db.settings.currency||'Kč')}</span><span>ťukni pro detail</span></div>
+    ${sorted.map((g,i)=>({g,n:i+1})).reverse().map(x=>gameHtml(x.g,x.n)).join('')}
+  </div>`;
 }
 
 /* =========================================================
@@ -1418,6 +1486,8 @@ function setPoints(v){
 }
 
 document.addEventListener('click', async e=>{
+  const grow = e.target.closest('.grow[data-gopen]');
+  if(grow){ openGameId = openGameId===grow.dataset.gopen ? null : grow.dataset.gopen; render(); return; }
   const row = e.target.closest('.daytbl tr[data-day]');
   if(row){
     openDayId = openDayId===row.dataset.day ? null : row.dataset.day;
