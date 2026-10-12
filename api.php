@@ -13,6 +13,8 @@ $file = $dir . '/prsicko.json';
 function empty_db() {
     return [
         'players'     => [],
+        // herní dny: {id, date: "YYYY-MM-DD", startTs, closedTs|null}; otevřený může být jen jeden
+        'sessions'    => [],
         'games'       => [],
         'settlements' => [],
         // pointValue = kolik stojí jeden bod (body v ruce poraženého × násobek × pointValue)
@@ -63,7 +65,40 @@ if (!is_array($in) || empty($in['action'])) fail(400, 'Chybí action');
 $playerIds = array_column($db['players'], 'id');
 $hasPlayer = function ($id) use ($playerIds) { return in_array($id, $playerIds, true); };
 
+// index otevřeného herního dne (nebo null)
+function open_session_idx($db) {
+    foreach ($db['sessions'] as $i => $s) if (empty($s['closedTs'])) return $i;
+    return null;
+}
+
 switch ($in['action']) {
+
+    case 'start_session':
+        if (open_session_idx($db) !== null) fail(400, 'Herní den už běží – nejdřív ho ukonči');
+        $date = (string)($in['date'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !strtotime($date)) fail(400, 'Neplatné datum');
+        $db['sessions'][] = ['id' => uid(), 'date' => $date, 'startTs' => time(), 'closedTs' => null];
+        break;
+
+    case 'close_session':
+        $i = open_session_idx($db);
+        if ($i === null || $db['sessions'][$i]['id'] !== ($in['id'] ?? '')) fail(400, 'Tenhle herní den neběží');
+        $sid = $db['sessions'][$i]['id'];
+        $hasGames = false;
+        foreach ($db['games'] as $g) if (($g['sessionId'] ?? '') === $sid) { $hasGames = true; break; }
+        if ($hasGames) $db['sessions'][$i]['closedTs'] = time();
+        else array_splice($db['sessions'], $i, 1);   // prázdný den se rovnou zahodí
+        break;
+
+    case 'reopen_session':
+        if (open_session_idx($db) !== null) fail(400, 'Jiný herní den právě běží');
+        $found = false;
+        foreach ($db['sessions'] as &$s) {
+            if ($s['id'] === ($in['id'] ?? '')) { $s['closedTs'] = null; $found = true; }
+        }
+        unset($s);
+        if (!$found) fail(400, 'Herní den nenalezen');
+        break;
 
     case 'add_player':
         $name = clean_str($in['name'] ?? '', 24);
@@ -87,6 +122,8 @@ switch ($in['action']) {
         break;
 
     case 'add_game':
+        $si = open_session_idx($db);
+        if ($si === null) fail(400, 'Nejdřív začni herní den');
         $w = $in['winner'] ?? ''; $l = $in['loser'] ?? '';
         if (!$hasPlayer($w) || !$hasPlayer($l)) fail(400, 'Neznámý vítěz nebo poražený');
         if ($w === $l) fail(400, 'Nemůžeš vyhrát sám nad sebou (i když by to bylo absurdní)');
@@ -103,6 +140,7 @@ switch ($in['action']) {
         $flags = array_values(array_slice(array_map(function ($f) { return clean_str($f, 24); }, (array)($in['flags'] ?? [])), 0, 20));
         $db['games'][] = [
             'id'           => uid(),
+            'sessionId'    => $db['sessions'][$si]['id'],
             'ts'           => time(),
             'participants' => $parts,
             'winner'       => $w,

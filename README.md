@@ -12,6 +12,17 @@ platba = body v ruce poraženého × násobek zavření × cena bodu
 
 Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádává se pouze vítěz s poraženým.
 
+## Herní den
+
+1. Na začátku večera **Začít herní den**
+2. Zapisuješ jednotlivé hry – nahoře běží průběžný žebříček dne
+3. Na konci **Ukončit herní den** – spočítá se žebříček dne (král / utopenec večera) a vyrovnání dne: dluhy mezi dvojicemi se vzájemně odečtou (A dluží B 92, B dluží A 40 → A dluží B 52)
+4. Celkové dluhy za všechny dny jsou v záložce **Bilance**, kde se dají označit jako vyrovnané
+
+Kronika ukazuje všechny herní dny s jejich žebříčkem; hry každého dne se rozbalí pod ním.
+
+> Na GitHub Pages (bez PHP) běží aplikace v offline režimu – data se ukládají jen v prohlížeči. Pro sdílení mezi telefony je potřeba server s PHP (níže).
+
 Hráči se zadávají celou přezdívkou, u stolu se zobrazují jako žeton s prvními dvěma písmeny (Pepík → **Pe**).
 
 ## Soubory
