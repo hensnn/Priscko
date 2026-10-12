@@ -289,6 +289,19 @@ nav button.on{background:var(--mustard);color:var(--ink)}
 nav button.on .i{transform:rotate(-12deg) scale(1.15)}
 .view{display:none}.view.on{display:block}
 
+/* ---------- ZÁMEK ---------- */
+body.ro .edit-only{display:none!important}
+.ro-only{display:none}
+body.ro .ro-only{display:block}
+.lockbtn{
+  margin:10px auto 0;display:inline-flex;align-items:center;gap:6px;border:3px solid var(--ink);
+  border-radius:999px;padding:6px 14px;font-weight:900;font-size:13px;cursor:pointer;
+  background:#c9f7d3;box-shadow:3px 3px 0 var(--ink)
+}
+body.ro .lockbtn{background:#fff}
+.dayline{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px;margin:2px 0 2px;flex-wrap:wrap;opacity:.85}
+.dayline .pill{border-color:var(--ink);color:#fff}
+
 /* ---------- DÉŠŤ KARET ---------- */
 .rain{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
 .drop{position:absolute;top:-110px;animation:fall linear forwards}
@@ -313,6 +326,7 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
   <div class="stamp">☔ Úřad pro evidenci deště karet · prší, nebo platíš</div>
   <div class="fan" id="fan" aria-hidden="true"></div>
   <div class="ticker" id="ticker">Načítám předpověď…</div>
+  <button class="lockbtn" id="lock"></button>
   <div class="offline" id="offline">🔌 Offline režim – server neodpověděl, data se ukládají jen v tomhle prohlížeči.</div>
 </header>
 
@@ -321,24 +335,19 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
   <!-- ===== HERNÍ DEN ===== -->
   <section class="view on" id="v-den">
 
-    <!-- hlavička dne / start / výsledek posledního dne -->
-    <div class="panel" id="day-panel"><div class="tape"></div><div id="day-box"></div></div>
+    <!-- 1) zápis další hry – úplně nahoře, je to nejčastější práce -->
+    <div class="panel hidden edit-only" id="form-panel">
+      <div class="tape"></div>
+      <h2>🃏 Další hra</h2>
+      <div class="dayline" id="dayline"></div>
 
-    <!-- formulář nového kola (jen když den běží) -->
-    <div class="panel hidden" id="form-panel">
-      <h2>🃏 Nové kolo</h2>
-      <p class="sub">Body v ruce poraženého × koeficient, zaokrouhlit, × násobek zavření = kolik platí vítězi.</p>
-
-      <label class="lbl"><span class="step">1</span> Kdo sedí u stolu?</label>
-      <div class="chips" id="pick-part"></div>
-
-      <label class="lbl"><span class="step">2</span> 🏆 Kdo zavřel (vítěz)</label>
+      <label class="lbl"><span class="step">1</span> 🏆 Kdo zavřel (vítěz)</label>
       <div class="seats" id="pick-win"></div>
 
-      <label class="lbl"><span class="step">3</span> 💧 Kdo zůstal s kartami (poražený)</label>
+      <label class="lbl"><span class="step">2</span> 💧 Kdo zůstal s kartami (poražený)</label>
       <div class="seats" id="pick-lose"></div>
 
-      <label class="lbl"><span class="step">4</span> 🃏 Kolik bodů měl poražený v ruce</label>
+      <label class="lbl"><span class="step">3</span> 🃏 Kolik bodů měl poražený v ruce</label>
       <div class="pts">
         <button class="btn sq" data-pt="-1">−</button>
         <input id="pts" type="number" inputmode="numeric" min="0" max="999" placeholder="?">
@@ -347,21 +356,29 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
       </div>
       <input id="pts-range" type="range" min="0" max="120" step="1" value="0" aria-label="Body v ruce">
 
-      <label class="lbl"><span class="step">5</span> ✖️ Jak vítěz zavřel – násobek</label>
+      <label class="lbl"><span class="step">4</span> ✖️ Jak vítěz zavřel – násobek</label>
       <div class="mults" id="pick-mult"></div>
 
-      <label class="lbl"><span class="step">6</span> ✍️ Poznámka pro budoucí archeology</label>
-      <input class="txt" id="note" maxlength="120" placeholder="např. „Hrálo se pod stolem, protože pršelo i dovnitř“">
+      <input class="txt" id="note" maxlength="120" placeholder="✍️ Poznámka (nepovinné)" style="margin-top:16px">
 
       <div class="preview" id="preview"></div>
       <button class="big" id="save">💸 ZAPLAŤ, NEŠŤASTNÍKU!</button>
     </div>
 
-    <!-- hry dnešního dne -->
+    <!-- 2) hry tohoto dne -->
     <div class="panel hidden" id="games-panel">
       <h2>📃 Hry tohoto dne</h2>
-      <p class="sub">Nejnovější nahoře. Překlep? Smaž a zapiš znovu.</p>
       <div class="hist" id="day-games"></div>
+    </div>
+
+    <!-- 3) průběžný žebříček / start dne / výsledek posledního dne -->
+    <div class="panel" id="day-panel"><div id="day-box"></div></div>
+
+    <!-- 4) kdo dnes hraje + ukončení dne – až dole, mění se jen občas -->
+    <div class="panel hidden edit-only" id="table-panel">
+      <h2>🪑 Kdo dnes hraje</h2>
+      <p class="sub">Tihle se nahoře nabízejí jako vítěz a poražený. Když nevybereš nikoho, nabízejí se všichni.</p>
+      <div class="chips" id="pick-part"></div>
       <button class="btn danger wide" id="close-day">🏁 Ukončit herní den a spočítat žebříček</button>
     </div>
   </section>
@@ -404,7 +421,7 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
       <div class="tape"></div>
       <h2>👥 Hráči</h2>
       <p class="sub">Celá přezdívka. U stolu se hráč ukazuje jen prvními dvěma písmeny.</p>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+      <div class="edit-only" style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
         <span class="tok" id="new-tok" style="background:#bbb">?</span>
         <input class="txt" id="new-name" maxlength="24" placeholder="Přezdívka nového hráče">
         <button class="btn ok" id="add-player">Přidat</button>
@@ -414,12 +431,17 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
     <div class="panel">
       <h2>⚙️ Nastavení</h2>
       <label class="lbl">Koeficient platby</label>
-      <div style="display:flex;gap:8px">
+      <p class="ro-only" id="coef-ro" style="font-weight:900;font-size:18px;margin:0"></p>
+      <div class="edit-only" style="display:flex;gap:8px">
         <input class="txt" id="set-pv" type="number" inputmode="decimal" min="0.001" step="0.01" style="max-width:140px">
         <input class="txt" id="set-cur" maxlength="8" style="max-width:100px">
         <button class="btn ok" id="save-set">Uložit</button>
       </div>
       <p class="sub" style="margin-top:8px">Platba = zaokrouhlit(body × koeficient) × násobek.<br>Př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14 · 64 b → 6,4 → 6 × 2 = 12.<br>Změna platí jen pro nové hry.</p>
+      <div class="edit-only">
+        <label class="lbl">Heslo pro úpravy</label>
+        <button class="btn" id="change-pass">🔑 Změnit heslo</button>
+      </div>
       <label class="lbl">Záloha</label>
       <button class="btn" id="export">⬇️ Stáhnout databázi (JSON)</button>
     </div>
@@ -446,6 +468,8 @@ nav button.on .i{transform:rotate(-12deg) scale(1.15)}
 const API = 'api.php';
 const LS_DB = 'prsicko_db_offline';
 const LS_UI = 'prsicko_ui';
+const LS_PASS = 'prsicko_heslo';   // heslo si pamatuje jen tohle zařízení
+const AUTH_ERR = 'Špatné heslo – zápis zamítnut';
 
 /* --- bezpečný localStorage (v některých prohlížečích hází chybu) --- */
 const ls = {
@@ -522,6 +546,7 @@ function tok(p, size){
 
 /* --- stav --- */
 let db = null, online = true, busy = false;
+let pass = '';
 let ui = {participants:[], winner:null, loser:null, points:null, mult:1};
 ui.participants = (safeJSON(ls.get(LS_UI))||{}).participants || [];
 
@@ -573,18 +598,48 @@ async function load(){
   render();
 }
 
+const canEdit = () => !!pass;
+const authInfo = () => online ? (db.auth||{hasPassword:false}) : {hasPassword:!!db.localAuth};
+function applyLock(){
+  document.body.classList.toggle('ro', !canEdit());
+  $('#lock').textContent = canEdit() ? '🔓 Úpravy odemčené · zamknout' : '🔒 Jen čtení · odemknout úpravy';
+}
+function forgetPass(){ pass=''; try{ localStorage.removeItem(LS_PASS) }catch(e){} }
+
+async function unlock(){
+  if(!authInfo().hasPassword){
+    const p1 = prompt('Heslo pro úpravy ještě není nastavené.\nZvol heslo (aspoň 4 znaky):'); if(!p1) return;
+    const p2 = prompt('Zopakuj heslo:'); if(p2===null) return;
+    if(p1!==p2){ toast('🙃 Hesla se neshodují.'); return; }
+    if(await op({action:'set_password', newPassword:p1})){
+      pass=p1; ls.set(LS_PASS,p1); applyLock(); render(); toast('🔑 Heslo nastaveno, úpravy odemčené.');
+    }
+    return;
+  }
+  const p = prompt('Heslo pro úpravy:'); if(!p) return;
+  if(await op({action:'check', password:p})){
+    pass=p; ls.set(LS_PASS,p); applyLock(); render(); toast('🔓 Odemčeno. Můžeš zapisovat.');
+  }
+}
+
 async function op(payload){
   if(busy) return false;
   busy = true;
   try{
     if(online){
-      const r = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const r = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({password:pass}, payload))});
       const j = await r.json().catch(()=>({error:'Server odpověděl nesmyslem'}));
-      if(!r.ok || j.error){ toast('⛈️ ' + (j.error||'Chyba serveru')); return false; }
+      if(!r.ok || j.error){
+        if(j.auth && payload.action!=='check'){ forgetPass(); applyLock(); render(); }
+        toast('⛈️ ' + (j.error||'Chyba serveru')); return false;
+      }
       db = normalize(j);
     }else{
-      const err = applyLocal(payload);
-      if(err){ toast('⛈️ ' + err); return false; }
+      const err = applyLocal(Object.assign({password:pass}, payload));
+      if(err){
+        if(err===AUTH_ERR && payload.action!=='check'){ forgetPass(); applyLock(); render(); }
+        toast('⛈️ ' + err); return false;
+      }
       memDb = db; ls.set(LS_DB, JSON.stringify(db));
     }
     render();
@@ -601,6 +656,16 @@ function applyLocal(o){
   const has = id => db.players.some(p=>p.id===id);
   const now = Math.floor(Date.now()/1000);
   const open = db.sessions.find(s=>!s.closedTs);
+  // offline (např. GitHub Pages): heslo jen v tomhle prohlížeči, uložené jako otisk
+  const h = x => { let v=5381; for(const c of String(x)) v=((v*33)^c.codePointAt(0))>>>0; return v.toString(36); };
+  if(o.action==='set_password'){
+    if(db.localAuth && h(o.password)!==db.localAuth) return AUTH_ERR;
+    if(!o.newPassword || o.newPassword.length<4) return 'Heslo musí mít aspoň 4 znaky';
+    db.localAuth = h(o.newPassword); db.rev=(db.rev||0)+1; return;
+  }
+  if(!db.localAuth) return 'Nejdřív nastav heslo pro úpravy';
+  if(h(o.password)!==db.localAuth) return AUTH_ERR;
+  if(o.action==='check') return;
   switch(o.action){
     case 'add_player': {
       const name = (o.name||'').trim().replace(/\s+/g,' ').slice(0,24);
@@ -750,7 +815,7 @@ function debtsHtml(list, withSettle){
     <div class="mdebt">
       ${tok(P(x.debtor),'s')} ${esc(P(x.debtor).name)} <span>💸</span> ${tok(P(x.creditor),'s')} ${esc(P(x.creditor).name)}
       <span class="val">${money(x.amt)}</span>
-      ${withSettle?`<button class="btn small ok" data-settle="${x.debtor}|${x.creditor}|${x.amt}">🤝 Vyrovnáno</button>`:''}
+      ${withSettle?`<button class="btn small ok edit-only" data-settle="${x.debtor}|${x.creditor}|${x.amt}">🤝 Vyrovnáno</button>`:''}
     </div>`).join('')}</div>`;
 }
 
@@ -769,7 +834,7 @@ function gameHtml(g, n){
     ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
     ${g.mult>1?`<div class="fl"><span class="tag m">✖️${g.mult} ${MULTS[g.mult-1].t}</span></div>`:''}
     ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
-    <div style="text-align:right;margin-top:6px"><button class="btn small danger" data-delg="${g.id}">🗑️ Smazat</button></div>
+    <div style="text-align:right;margin-top:6px"><button class="btn small danger edit-only" data-delg="${g.id}">🗑️ Smazat</button></div>
   </div>`;
 }
 function gamesList(games){
@@ -782,36 +847,38 @@ function gamesList(games){
    ========================================================= */
 function render(){
   if(!db) return;
+  applyLock();
   renderDen(); renderBilance(); renderKronika(); renderHraci();
 }
 const visiblePlayers = () => db.players.filter(p=>!p.hidden);
 
 function renderDen(){
   const open = openSession();
-  $('#form-panel').classList.toggle('hidden', !open);
-  $('#games-panel').classList.toggle('hidden', !open);
+  ['#form-panel','#games-panel','#table-panel'].forEach(sel=>$(sel).classList.toggle('hidden', !open));
 
   if(open){
     const day = {...open, games:gamesOf(open.id)};
+    const d = parseIso(open.date);
+    $('#dayline').innerHTML = `<span>📅 ${esc(d.toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'numeric'}))}</span>
+      <span>· hra č. ${day.games.length+1}</span><span class="pill live">● hraje se</span>`;
+    $('#day-games').innerHTML = day.games.length ? gamesList(day.games)
+      : `<div class="empty"><span class="em">🌂</span>Zatím ani kapka. ${canEdit()?'Zapiš první hru nahoře.':'Čeká se na první hru.'}</div>`;
     $('#day-box').innerHTML = `
-      <h2>📅 Herní den</h2>
+      <h2>🏆 Průběžný žebříček</h2>
       ${dayHead(day, ` · od ${fmtTime(open.startTs)}`)}
-      <h3>🏆 Průběžný žebříček</h3>
       ${rankHtml(day.games, true)}
       <h3>💸 Kdo komu zatím dluží (za dnešek)</h3>
       ${debtsHtml(pairDebts(day.games), false)}`;
-    $('#day-games').innerHTML = day.games.length ? gamesList(day.games)
-      : `<div class="empty"><span class="em">🌂</span>Zatím ani kapka. Zapiš první hru.</div>`;
     renderForm();
   }else{
     const last = allDays().find(d=>d.closedTs && d.games.length);
     $('#day-box').innerHTML = `
       <h2>📅 Herní den</h2>
-      <p class="sub">Na začátku večera otevři herní den. Hry se pak zapisují pod něj a po ukončení se spočítá žebříček.</p>
-      <div class="startbox">
-        <input type="date" id="start-date" value="${todayIso()}">
-      </div>
-      <button class="big green" id="start-day">🌧️ ZAČÍT HERNÍ DEN</button>
+      ${canEdit() ? `
+        <p class="sub">Na začátku večera otevři herní den. Hry se pak zapisují pod něj a po ukončení se spočítá žebříček.</p>
+        <div class="startbox"><input type="date" id="start-date" value="${todayIso()}"></div>
+        <button class="big green" id="start-day">🌧️ ZAČÍT HERNÍ DEN</button>`
+      : `<div class="empty"><span class="em">💤</span>Teď se nehraje. Až někdo otevře herní den, uvidíš tu hry naživo.</div>`}
       ${last ? `
         <h3 style="margin-top:22px">🏁 Výsledek posledního dne</h3>
         ${dayHead(last)}
@@ -827,15 +894,16 @@ function renderForm(){
   ui.participants = ui.participants.filter(id=>vp.some(p=>p.id===id));
 
   $('#pick-part').innerHTML = !vp.length
-    ? `<div class="empty"><span class="em">🪑</span>U stolu nikdo nesedí. Přidej hráče v záložce <b>Hráči</b>.</div>`
+    ? `<div class="empty"><span class="em">🪑</span>Zatím žádní hráči. Přidej je v záložce <b>Hráči</b>.</div>`
     : vp.map(p=>nameChip(p, ui.participants.includes(p.id), `data-part="${p.id}"`)).join('')
-      + chip('plain', false, '✨ Všichni', 'data-all="1"');
+      + chip('plain', false, ui.participants.length===vp.length ? '✖️ Nikdo' : '✨ Všichni', 'data-all="1"');
 
-  const parts = vp.filter(p=>ui.participants.includes(p.id));
+  // u stolu = vybraní hráči; když není vybraný nikdo, nabízejí se všichni
+  const parts = ui.participants.length ? vp.filter(p=>ui.participants.includes(p.id)) : vp;
   if(!parts.some(p=>p.id===ui.winner)) ui.winner=null;
   if(!parts.some(p=>p.id===ui.loser)) ui.loser=null;
 
-  const hint = '<span style="opacity:.6;font-weight:800">Nejdřív posaď ke stolu aspoň dva hráče ☝️</span>';
+  const hint = '<span style="opacity:.6;font-weight:800">Potřebuješ aspoň dva hráče – přidej je v záložce Hráči.</span>';
   const seats = (role, badge) => parts.length<2 ? hint : parts.map(p=>{
     const on = ui[role]===p.id, other = role==='winner' ? ui.loser : ui.winner;
     return `<button type="button" class="seat${on?' on':''}" data-${role==='winner'?'win':'lose'}="${p.id}" data-badge="${badge}" ${other===p.id?'disabled':''} aria-label="${esc(p.name)}">${tok(p)}</button>`;
@@ -885,7 +953,7 @@ function renderBilance(){
       <div class="top"><span>🤝 Vyrovnání</span><span>${new Date(s.ts*1000).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div>
       <div class="main">${tok(P(s.from),'s')} ${esc(P(s.from).name)} zaplatil ${tok(P(s.to),'s')} ${esc(P(s.to).name)}
         <span class="amt" style="color:#15803d">${money(s.amount)}</span></div>
-      <div style="text-align:right"><button class="btn small danger" data-dels="${s.id}">🗑️</button></div>
+      <div style="text-align:right"><button class="btn small danger edit-only" data-dels="${s.id}">🗑️</button></div>
     </div>`).join('')
     : `<div class="empty" style="padding:8px">Zatím nikdo nic nesplatil. Typické.</div>`;
 
@@ -932,12 +1000,13 @@ function renderKronika(){
       <h3 style="font-size:18px;margin:12px 0 6px">💸 ${d.closedTs?'Vyrovnání dne':'Zatím za dnešek'}</h3>
       ${debtsHtml(pairDebts(d.games), false)}
       ${d.games.length?`<details class="games"><summary>🃏 Hry tohoto dne (${d.games.length})</summary><div class="hist">${gamesList(d.games)}</div></details>`:''}
-      ${!open && lastClosed && d.id===lastClosed.id ? `<div style="text-align:right;margin-top:10px"><button class="btn small" data-reopen="${d.id}">↩️ Znovu otevřít den</button></div>`:''}
+      ${!open && lastClosed && d.id===lastClosed.id ? `<div style="text-align:right;margin-top:10px"><button class="btn small edit-only" data-reopen="${d.id}">↩️ Znovu otevřít den</button></div>`:''}
     </div>`).join('');
 }
 
 function renderHraci(){
   if(document.activeElement!==$('#set-pv')) $('#set-pv').value = db.settings.pointValue;
+  $('#coef-ro').textContent = numC(pv()) + ' · měna ' + (db.settings.currency||'Kč');
   if(document.activeElement!==$('#set-cur')) $('#set-cur').value = db.settings.currency||'Kč';
   $('#players').innerHTML = db.players.length ? db.players.map(p=>{
     const games = db.games.filter(g=>g.participants.includes(p.id)).length;
@@ -945,8 +1014,8 @@ function renderHraci(){
       ${tok(p)}
       <div><div class="nm">${esc(p.name)}</div><div class="tt">${games} her · ${p.hidden?'poslán domů 🏠':'u stolu 🪑'}</div></div>
       <div style="margin-left:auto">${p.hidden
-        ? `<button class="btn small ok" data-hide="${p.id}|0">Vrátit ke stolu</button>`
-        : `<button class="btn small" data-hide="${p.id}|1">Poslat domů</button>`}</div>
+        ? `<button class="btn small ok edit-only" data-hide="${p.id}|0">Vrátit ke stolu</button>`
+        : `<button class="btn small edit-only" data-hide="${p.id}|1">Poslat domů</button>`}</div>
     </div>`;}).join('')
     : `<div class="empty"><span class="em">👻</span>Zatím tu straší jen prázdné židle.</div>`;
 }
@@ -995,6 +1064,14 @@ document.addEventListener('click', async e=>{
   const d = t.dataset;
 
   if(d.v){ showView(d.v); return; }
+  if(t.id==='lock'){ if(canEdit()){ forgetPass(); applyLock(); render(); toast('🔒 Zamčeno. Teď jen koukáš.'); } else unlock(); return; }
+  if(t.id==='change-pass'){
+    const p1 = prompt('Nové heslo (aspoň 4 znaky):'); if(!p1) return;
+    const p2 = prompt('Zopakuj nové heslo:'); if(p2===null) return;
+    if(p1!==p2){ toast('🙃 Hesla se neshodují.'); return; }
+    if(await op({action:'set_password', newPassword:p1})){ pass=p1; ls.set(LS_PASS,p1); toast('🔑 Heslo změněno.'); }
+    return;
+  }
 
   if(t.id==='start-day'){
     const date = $('#start-date').value || todayIso();
@@ -1114,6 +1191,7 @@ $('#logo').addEventListener('click',()=>{ rain(18); ticker(); });
 $('#fan').innerHTML = card('srdce','A') + card('zelene','VII') + card('srdce','Sv') + card('kule','K');
 
 /* --- start + pravidelné obnovování ze serveru --- */
+pass = ls.get(LS_PASS) || '';
 ticker(); setInterval(ticker, 9000);
 load();
 setInterval(async ()=>{

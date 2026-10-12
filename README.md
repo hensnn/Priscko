@@ -14,10 +14,21 @@ Příklad s koeficientem 0,1: 67 b → 6,7 → **7** × 2 = **14** · 64 b → 6
 
 Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádává se pouze vítěz s poraženým.
 
+## Heslo pro úpravy
+
+- Bez hesla je aplikace **jen pro čtení** – každý vidí hry naživo, žebříčky a bilanci.
+- Tlačítko **🔒 Jen čtení · odemknout úpravy** v hlavičce:
+  - poprvé (heslo ještě není) – rovnou si heslo zvolíš,
+  - potom – zadáš heslo a telefon si ho zapamatuje.
+- Heslo se dá změnit v záložce **Hráči → Nastavení**.
+- Na serveru je uložené jen jako otisk v `data/auth.json` a ven se nikdy neposílá. Každý zápis server znovu ověří.
+- **Heslo nastav hned po nasazení** – dokud není nastavené, může ho zvolit kdokoli, kdo stránku otevře první.
+
+
 ## Herní den
 
 1. Na začátku večera **Začít herní den**
-2. Zapisuješ jednotlivé hry – nahoře běží průběžný žebříček dne
+2. Nahoře je rovnou formulář **Další hra**, pod ním hry dne a průběžný žebříček, úplně dole **Kdo dnes hraje** a ukončení dne
 3. Na konci **Ukončit herní den** – spočítá se žebříček dne (král / utopenec večera) a vyrovnání dne: dluhy mezi dvojicemi se vzájemně odečtou (A dluží B 92, B dluží A 40 → A dluží B 52)
 4. Celkové dluhy za všechny dny jsou v záložce **Bilance**, kde se dají označit jako vyrovnané
 

@@ -9,6 +9,7 @@ header('Cache-Control: no-store');
 
 $dir  = __DIR__ . '/data';
 $file = $dir . '/prsicko.json';
+$authFile = $dir . '/auth.json';   // hash hesla pro úpravy – nikdy se neposílá ven
 
 function empty_db() {
     return [
@@ -51,9 +52,26 @@ if (!is_array($db)) $db = empty_db();
 $db = array_merge(empty_db(), $db);
 $db['settings'] = array_merge(empty_db()['settings'], (array)$db['settings']);
 
+// --- heslo pro úpravy ---
+$hash = null;
+if (is_file($authFile)) {
+    $a = json_decode((string)@file_get_contents($authFile), true);
+    $hash = $a['hash'] ?? null;
+}
+function out($db, $hasPw) {
+    $db['auth'] = ['hasPassword' => (bool)$hasPw];
+    echo json_encode($db, JSON_UNESCAPED_UNICODE);
+}
+function deny() {
+    sleep(1);   // zpomalení hádání hesla
+    http_response_code(403);
+    echo json_encode(['error' => 'Špatné heslo – zápis zamítnut', 'auth' => true], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if ($method === 'GET') {
     flock($fh, LOCK_UN); fclose($fh);
-    echo json_encode($db, JSON_UNESCAPED_UNICODE);
+    out($db, $hash);
     exit;
 }
 
@@ -61,6 +79,23 @@ if ($method !== 'POST') fail(405, 'Jen GET nebo POST');
 
 $in = json_decode(file_get_contents('php://input'), true);
 if (!is_array($in) || empty($in['action'])) fail(400, 'Chybí action');
+
+// Každý zápis potřebuje heslo. Jediná výjimka: úplně první nastavení hesla.
+$pw = (string)($in['password'] ?? '');
+if ($in['action'] === 'set_password') {
+    if ($hash && !password_verify($pw, $hash)) deny();
+    $new = (string)($in['newPassword'] ?? '');
+    if (mb_strlen($new) < 4) fail(400, 'Heslo musí mít aspoň 4 znaky');
+    if (@file_put_contents($authFile, json_encode(['hash' => password_hash($new, PASSWORD_DEFAULT)])) === false) {
+        fail(500, 'Nelze uložit heslo (práva k zápisu do data/?)');
+    }
+    @chmod($authFile, 0600);
+    out($db, true);
+    exit;
+}
+if (!$hash) fail(403, 'Nejdřív nastav heslo pro úpravy');
+if (!password_verify($pw, $hash)) deny();
+if ($in['action'] === 'check') { out($db, true); exit; }   // jen ověření hesla
 
 $playerIds = array_column($db['players'], 'id');
 $hasPlayer = function ($id) use ($playerIds) { return in_array($id, $playerIds, true); };
@@ -195,4 +230,4 @@ fflush($fh);
 flock($fh, LOCK_UN);
 fclose($fh);
 
-echo $json;
+out($db, true);
