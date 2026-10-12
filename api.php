@@ -40,6 +40,37 @@ function fail($code, $msg) {
     exit;
 }
 
+// --- zkratky hráčů (žeton u stolu) – vždy jedinečné ---
+function mk_abbr($a, $b = '') { return mb_strtoupper($a) . mb_strtolower($b); }
+function base_abbr($name) {
+    $ch = preg_split('//u', preg_replace('/\s+/u', '', $name), -1, PREG_SPLIT_NO_EMPTY);
+    return $ch ? mk_abbr($ch[0], $ch[1] ?? '') : '?';
+}
+function abbr_of($p) { return !empty($p['abbr']) ? $p['abbr'] : base_abbr($p['name']); }
+function taken_abbrs($players, $exceptId = null) {
+    $t = [];
+    foreach ($players as $p) if ($p['id'] !== $exceptId) $t[mb_strtolower(abbr_of($p))] = $p['name'];
+    return $t;
+}
+// Pepík = Pe; Petr → Pe obsazeno → Pt; Petr Novák → PN; jinak P2, P3…
+function unique_abbr($name, $taken) {
+    $ch = preg_split('//u', preg_replace('/\s+/u', '', $name), -1, PREG_SPLIT_NO_EMPTY);
+    if (!$ch) return '?';
+    $cand = [mk_abbr($ch[0], $ch[1] ?? '')];
+    $words = preg_split('/\s+/u', trim($name), -1, PREG_SPLIT_NO_EMPTY);
+    if (count($words) > 1) $cand[] = mk_abbr(mb_substr($words[0], 0, 1), mb_substr($words[1], 0, 1));
+    for ($i = 2; $i < count($ch); $i++) $cand[] = mk_abbr($ch[0], $ch[$i]);
+    for ($n = 2; $n <= 99; $n++) $cand[] = mk_abbr($ch[0]) . $n;
+    foreach ($cand as $c) if (!isset($taken[mb_strtolower($c)])) return $c;
+    return mk_abbr($ch[0]) . substr(uid(), 0, 2);
+}
+function clean_abbr($a) {
+    $a = preg_replace('/\s+/u', '', (string)$a);
+    $ch = preg_split('//u', $a, -1, PREG_SPLIT_NO_EMPTY);
+    if (!$ch) return '';
+    return mk_abbr($ch[0], implode('', array_slice($ch, 1, 2)));   // max 3 znaky
+}
+
 function uid() { return bin2hex(random_bytes(6)); }
 
 function clean_str($s, $max = 40) {
@@ -151,11 +182,27 @@ switch ($in['action']) {
         foreach ($db['players'] as $p) {
             if (mb_strtolower($p['name']) === mb_strtolower($name)) fail(400, 'Tenhle hráč už u stolu sedí');
         }
-        // name = celá přezdívka; zkratka u stolu (první dvě písmena) se počítá v prohlížeči
+        // name = celá přezdívka; abbr = jedinečná zkratka u stolu (výchozí první dvě písmena)
+        $taken = taken_abbrs($db['players']);
+        $abbr = clean_abbr($in['abbr'] ?? '');
+        if ($abbr !== '' && isset($taken[mb_strtolower($abbr)])) fail(400, 'Zkratku „' . $abbr . '“ už má ' . $taken[mb_strtolower($abbr)]);
+        if ($abbr === '') $abbr = unique_abbr($name, $taken);
         $db['players'][] = [
             'id'   => uid(),
             'name' => $name,
+            'abbr' => $abbr,
         ];
+        break;
+
+    case 'set_abbr':
+        $abbr = clean_abbr($in['abbr'] ?? '');
+        if ($abbr === '') fail(400, 'Zkratka nesmí být prázdná');
+        $taken = taken_abbrs($db['players'], $in['id'] ?? '');
+        if (isset($taken[mb_strtolower($abbr)])) fail(400, 'Zkratku „' . $abbr . '“ už má ' . $taken[mb_strtolower($abbr)]);
+        $found = false;
+        foreach ($db['players'] as &$p) if ($p['id'] === ($in['id'] ?? '')) { $p['abbr'] = $abbr; $found = true; }
+        unset($p);
+        if (!$found) fail(400, 'Hráč nenalezen');
         break;
 
     case 'remove_player':

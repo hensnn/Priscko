@@ -30,13 +30,17 @@ Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádá
 1. Na začátku večera **Začít herní den**
 2. Nahoře je rovnou formulář **Další hra**, pod ním hry dne a průběžný žebříček, úplně dole **Kdo dnes hraje** a ukončení dne
 3. Na konci **Ukončit herní den** – spočítá se žebříček dne (král / utopenec večera) a vyrovnání dne: dluhy mezi dvojicemi se vzájemně odečtou (A dluží B 92, B dluží A 40 → A dluží B 52)
-4. Celkové dluhy za všechny dny jsou v záložce **Bilance**, kde se dají označit jako vyrovnané
+4. Záložka **Bilance**: nahoře tabulka **Výsledky herních dnů** (dny × hráči, vítěz dne zeleně s 👑, nejhorší červeně, dole součet a počet vyhraných dnů), pod ní **Celkový žebříček**, pak **Kdo komu dluží** (označení jako vyrovnané) a statistiky
 
 Kronika ukazuje všechny herní dny s jejich žebříčkem; hry každého dne se rozbalí pod ním.
 
 > Na GitHub Pages (bez PHP) běží aplikace v offline režimu – data se ukládají jen v prohlížeči. Pro sdílení mezi telefony je potřeba server s PHP (níže).
 
-Hráči se zadávají celou přezdívkou, u stolu se zobrazují jako žeton s prvními dvěma písmeny (Pepík → **Pe**).
+Hráči se zadávají celou přezdívkou, u stolu se zobrazují jako žeton se zkratkou. Zkratka je **vždy jedinečná**:
+
+- výchozí jsou první dvě písmena (Pepík → **Pe**)
+- když už je obsazená, vezme se další písmeno jména (Petr → **Pt**, Pepa → **Pp**), u dvou slov iniciály (Petr Novák → **Pn**), jinak číslo (**P2**)
+- v záložce **Hráči** jde zkratku každému přepsat (1–3 znaky); obsazenou zkratku aplikace nepovolí
 
 ## Soubory
 

@@ -239,6 +239,25 @@ input.txt{
 .mrow.first{background:#fff3c4}
 .mdebt{display:flex;align-items:center;gap:6px;padding:6px 8px;border:2px dashed var(--ink);border-radius:12px;background:#fff;font-weight:900;flex-wrap:wrap}
 .mdebt .val{margin-left:auto;font-family:var(--display);font-size:20px;color:var(--red)}
+/* tabulka výsledků po dnech */
+.tblwrap{overflow-x:auto;border:3px solid var(--ink);border-radius:14px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
+table.daytbl{border-collapse:separate;border-spacing:0;width:100%;font-weight:800;font-size:14px}
+.daytbl th,.daytbl td{padding:7px 8px;text-align:right;border-bottom:2px solid #eee;white-space:nowrap}
+.daytbl th{background:var(--ink);color:var(--paper);position:sticky;top:0}
+.daytbl th .tok{width:30px;height:30px;font-size:15px;border-color:var(--paper)}
+.daytbl th:first-child,.daytbl td:first-child{position:sticky;left:0;text-align:left;z-index:1}
+.daytbl td:first-child{background:var(--paper);font-weight:900}
+.daytbl th:first-child{z-index:2}
+.daytbl td.na{color:#bbb;text-align:center}
+.daytbl td.best{background:#d9f7de;color:#15803d}
+.daytbl td.worst{background:#ffe0e0;color:var(--red)}
+.daytbl td .cr{font-size:11px}
+.daytbl tr.live td:first-child::after{content:" ●";color:var(--leaf)}
+.daytbl tfoot td{border-top:3px solid var(--ink);border-bottom:0;font-family:var(--display);font-weight:400;font-size:18px;background:#fff3c4}
+.daytbl tfoot tr+tr td{font-family:"Nunito";font-weight:900;font-size:13px;background:#fff}
+.daytbl .dd{font-size:11px;opacity:.6;font-weight:700}
+.legend{font-size:12px;font-weight:800;opacity:.7;margin-top:8px}
+.abbr-in{width:56px;text-align:center;font-family:var(--display);font-size:20px;border:3px solid var(--ink);border-radius:10px;padding:3px;background:#fff}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .stat{border:3px solid var(--ink);border-radius:14px;padding:10px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
 .stat b{display:block;font-family:var(--display);font-size:26px;font-weight:400;letter-spacing:.5px}
@@ -400,8 +419,13 @@ body.ro .lockbtn{background:#fff}
   <section class="view" id="v-bilance">
     <div class="panel">
       <div class="tape"></div>
-      <h2>📒 Celková bilance</h2>
-      <p class="sub">Součet všech herních dnů a vyrovnání.</p>
+      <h2>📅 Výsledky herních dnů</h2>
+      <p class="sub">Jak dopadl každý herní den – kolik kdo ten den vyhrál nebo prohrál. Nejnovější nahoře.</p>
+      <div id="daytable"></div>
+    </div>
+    <div class="panel">
+      <h2>🏆 Celkový žebříček</h2>
+      <p class="sub">Součet všech odehraných her. Kdo vede a kdo nejvíc mokne.</p>
       <div class="rank" id="rank"></div>
     </div>
     <div class="panel">
@@ -580,8 +604,28 @@ function tokColor(name){
   let h = 0; for(const c of String(name)) h = (h*31 + c.codePointAt(0)) >>> 0;
   return TOK_COLORS[h % TOK_COLORS.length];
 }
+// zkratka u stolu je vždy jedinečná: uložená u hráče, jinak první dvě písmena
+const abbrOf = p => p.abbr || abbr(p.name);
+function takenAbbrs(exceptId){
+  const t = {}; (db?db.players:[]).forEach(p=>{ if(p.id!==exceptId) t[abbrOf(p).toLocaleLowerCase('cs')] = p.name; }); return t;
+}
+// Pepík = Pe; Petr → Pe obsazeno → Pt; Petr Novák → PN; jinak P2, P3…
+function uniqueAbbr(name, taken){
+  const ch = Array.from(String(name).replace(/\s+/g,'')); if(!ch.length) return '?';
+  const up = c => c.toLocaleUpperCase('cs'), lo = c => c.toLocaleLowerCase('cs');
+  const cand = [up(ch[0]) + (ch[1]?lo(ch[1]):'')];
+  const words = String(name).trim().split(/\s+/);
+  if(words.length>1) cand.push(up(words[0][0]) + lo(Array.from(words[1])[0]));
+  for(let i=2;i<ch.length;i++) cand.push(up(ch[0]) + lo(ch[i]));
+  for(let n=2;n<=99;n++) cand.push(up(ch[0]) + n);
+  return cand.find(c=>!taken[lo(c)]) || up(ch[0])+'?';
+}
+function cleanAbbr(a){
+  const ch = Array.from(String(a).replace(/\s+/g,'')); if(!ch.length) return '';
+  return ch[0].toLocaleUpperCase('cs') + ch.slice(1,3).join('').toLocaleLowerCase('cs');
+}
 function tok(p, size){
-  return `<span class="tok${size?' '+size:''}" style="background:${tokColor(p.name)}" title="${esc(p.name)}">${esc(abbr(p.name))}</span>`;
+  return `<span class="tok${size?' '+size:''}" style="background:${tokColor(p.name)}" title="${esc(p.name)}">${esc(abbrOf(p))}</span>`;
 }
 
 /* --- stav --- */
@@ -712,7 +756,18 @@ function applyLocal(o){
       const name = (o.name||'').trim().replace(/\s+/g,' ').slice(0,24);
       if(!name) return 'Hráč potřebuje jméno';
       if(db.players.some(p=>p.name.toLowerCase()===name.toLowerCase())) return 'Tenhle hráč už u stolu sedí';
-      db.players.push({id:uid(),name}); break;
+      const taken = takenAbbrs();
+      let ab = cleanAbbr(o.abbr||'');
+      if(ab && taken[ab.toLocaleLowerCase('cs')]) return `Zkratku „${ab}“ už má ${taken[ab.toLocaleLowerCase('cs')]}`;
+      if(!ab) ab = uniqueAbbr(name, taken);
+      db.players.push({id:uid(),name,abbr:ab}); break;
+    }
+    case 'set_abbr': {
+      const ab = cleanAbbr(o.abbr||''); if(!ab) return 'Zkratka nesmí být prázdná';
+      const taken = takenAbbrs(o.id);
+      if(taken[ab.toLocaleLowerCase('cs')]) return `Zkratku „${ab}“ už má ${taken[ab.toLocaleLowerCase('cs')]}`;
+      const pl = db.players.find(p=>p.id===o.id); if(!pl) return 'Hráč nenalezen';
+      pl.abbr = ab; break;
     }
     case 'remove_player': db.players.forEach(p=>{ if(p.id===o.id) p.hidden=!!o.hidden }); break;
     case 'start_session':
@@ -1046,18 +1101,54 @@ function renderNastaveni(){
   $('#save-set').textContent = dirty ? '💾 Uložit změny – zatím neuloženo!' : '💾 Uložit platbu a násobky';
 }
 
+function renderDayTable(){
+  const days = allDays().filter(d=>d.games.length);
+  if(!days.length){ $('#daytable').innerHTML = `<div class="empty"><span class="em">📭</span>Zatím se neodehrál žádný herní den.</div>`; return; }
+  // hráči, kteří někdy hráli – seřazení podle celkového výsledku
+  const total = {}, kings = {};
+  days.forEach(d=>ranking(d.games).forEach(x=>total[x.id]=(total[x.id]||0)+x.v));
+  const cols = Object.keys(total).sort((a,b)=>total[b]-total[a]);
+  const fmt = v => `${v>0?'+':''}${num(v)}`;
+  const rows = days.map(d=>{
+    const r = {}; ranking(d.games).forEach(x=>r[x.id]=x.v);
+    const vals = Object.values(r), max = Math.max(...vals), min = Math.min(...vals);
+    if(max>0){ const k = Object.keys(r).filter(id=>r[id]===max); if(k.length===1) kings[k[0]]=(kings[k[0]]||0)+1; }
+    const dt = parseIso(d.date);
+    const head = `${dt.toLocaleDateString('cs-CZ',{weekday:'short'})} ${dt.getDate()}. ${dt.getMonth()+1}.<div class="dd">${d.games.length} ${d.games.length===1?'hra':d.games.length<5?'hry':'her'}</div>`;
+    return `<tr class="${d.closedTs?'':'live'}"><td>${head}</td>${cols.map(id=>{
+      if(!(id in r)) return '<td class="na">·</td>';
+      const v=r[id], cls = (v===max&&v>0)?'best':(v===min&&v<0)?'worst':'';
+      return `<td class="${cls}">${cls==='best'?'👑 ':''}${fmt(v)}</td>`;
+    }).join('')}</tr>`;
+  }).join('');
+  $('#daytable').innerHTML = `
+    <div class="tblwrap"><table class="daytbl">
+      <thead><tr><th>Den</th>${cols.map(id=>`<th title="${esc(P(id).name)}">${tok(P(id),'s')}</th>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot>
+        <tr><td>Celkem</td>${cols.map(id=>`<td class="${total[id]>0?'pos':total[id]<0?'neg':'zero'}">${fmt(total[id])}</td>`).join('')}</tr>
+        <tr><td>👑 dnů</td>${cols.map(id=>`<td>${kings[id]||'·'}</td>`).join('')}</tr>
+      </tfoot>
+    </table></div>
+    <div class="legend">Částky v ${esc(db.settings.currency||'Kč')} · 👑 zelená = vítěz dne · červená = nejhorší dne · ● = den ještě běží · tabulka jde posouvat do strany</div>`;
+}
+
 function renderBilance(){
-  const b = balances();
-  const list = db.players.filter(p=>!p.hidden || Math.abs(b[p.id])>0.004)
-    .map(p=>({p,v:b[p.id]||0})).sort((a,c)=>c.v-a.v);
+  renderDayTable();
+  // celkový žebříček – jen ze her (vyrovnání dluhů na pořadí nemá vliv)
+  const all = ranking(db.games);
+  const kingDays = {};
+  allDays().filter(d=>d.closedTs && d.games.length).forEach(d=>{ const r=ranking(d.games); if(r[0]&&r[0].v>0&&(!r[1]||r[1].v<r[0].v)) kingDays[r[0].id]=(kingDays[r[0].id]||0)+1; });
   const title = (i,n,v)=> i===0&&v>0?'👑 Dešťový baron' : i===n-1&&v<0?'☔ Promoklý do nitě' : v>0?'🌤️ Suchý a spokojený' : v<0?'🌧️ Mírně mokne':'🌫️ Mlha, nic se neděje';
-  $('#rank').innerHTML = list.length ? list.map((x,i)=>`
+  $('#rank').innerHTML = all.length ? all.map((x,i)=>`
     <div class="row">
-      ${tok(x.p)}
-      <div><div class="nm">${esc(x.p.name)}</div><div class="tt">${title(i,list.length,x.v)}</div></div>
+      <span class="pl" style="font-family:var(--display);font-size:20px;width:28px;text-align:center">${PLACE[i]||(i+1)+'.'}</span>
+      ${tok(P(x.id))}
+      <div><div class="nm">${esc(P(x.id).name)}</div>
+        <div class="tt">${title(i,all.length,x.v)} · ${x.w}× výhra · ${x.l}× prohra${kingDays[x.id]?` · 👑 ${kingDays[x.id]}× král dne`:''}</div></div>
       <div class="val">${signed(x.v)}</div>
     </div>`).join('')
-    : `<div class="empty"><span class="em">🏜️</span>Zatím sucho. Žádní hráči, žádné peníze.</div>`;
+    : `<div class="empty"><span class="em">🏜️</span>Zatím sucho. Žádné hry, žádné peníze.</div>`;
 
   $('#debts').innerHTML = debtsHtml(pairDebts(db.games, db.settlements), true);
 
@@ -1120,11 +1211,13 @@ function renderKronika(){
 }
 
 function renderHraci(){
+  if(document.activeElement && document.activeElement.classList.contains('abbr-in')) return;   // právě se píše zkratka
   $('#players').innerHTML = db.players.length ? db.players.map(p=>{
     const games = db.games.filter(g=>g.participants.includes(p.id)).length;
     return `<div class="row" style="${p.hidden?'opacity:.5':''}">
       ${tok(p)}
       <div><div class="nm">${esc(p.name)}</div><div class="tt">${games} her · ${p.hidden?'poslán domů 🏠':'u stolu 🪑'}</div></div>
+      <input class="abbr-in edit-only" data-abbr="${p.id}" value="${esc(abbrOf(p))}" maxlength="3" aria-label="Zkratka u stolu" title="Zkratka u stolu – přepiš a potvrď">
       <div style="margin-left:auto">${p.hidden
         ? `<button class="btn small ok edit-only" data-hide="${p.id}|0">Vrátit ke stolu</button>`
         : `<button class="btn small edit-only" data-hide="${p.id}|1">Poslat domů</button>`}</div>
@@ -1293,22 +1386,31 @@ document.addEventListener('click', async e=>{
 async function addPlayer(inputSel='#new-name'){
   const name=$(inputSel).value.trim().replace(/\s+/g,' ');
   if(!name){ toast('🤔 Hráč bez přezdívky je jen duch.'); return; }
-  const clash = db.players.find(p=>abbr(p.name)===abbr(name));
-  if(clash && !confirm(`Zkratku „${abbr(name)}“ už u stolu má ${clash.name}. Budou se plést. Přesto přidat?`)) return;
   if(await op({action:'add_player',name})){
     const added = db.players.find(p=>p.name===name);
     // prázdný výběr = u stolu všichni → nový hráč je tam automaticky, výběr neměnit
     if(added && ui.participants.length && !ui.participants.includes(added.id)){ ui.participants.push(added.id); saveUI(); render(); }
     $(inputSel).value=''; updNewTok();
-    toast(`🪑 ${name} si přisedl ke stolu jako „${abbr(name)}“.`);
+    const ab = added ? abbrOf(added) : abbr(name);
+    toast(ab!==abbr(name) ? `🪑 ${name} přisedl jako „${ab}“ – „${abbr(name)}“ už u stolu někdo má.` : `🪑 ${name} si přisedl ke stolu jako „${ab}“.`);
   }
 }
 function updNewTok(){
   const n = $('#new-name').value.trim(), t = $('#new-tok');
-  t.textContent = n ? abbr(n) : '?';
+  t.textContent = n ? uniqueAbbr(n, takenAbbrs()) : '?';
   t.style.background = n ? tokColor(n.replace(/\s+/g,' ')) : '#bbb';
 }
 $('#new-name').addEventListener('input', updNewTok);
+// přepsání zkratky hráče: potvrdí se Enterem nebo opuštěním pole
+document.addEventListener('change', async e=>{
+  const id = e.target.dataset && e.target.dataset.abbr; if(!id) return;
+  const ab = cleanAbbr(e.target.value), pl = P(id);
+  if(!ab || ab===abbrOf(pl)){ e.target.value = abbrOf(pl); return; }
+  e.target.blur();
+  if(await op({action:'set_abbr', id, abbr:ab})) toast(`✏️ ${pl.name} je u stolu teď „${ab}“.`);
+  else renderHraci();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset && e.target.dataset.abbr) e.target.blur(); });
 document.addEventListener('input', e=>{
   if(e.target.closest && e.target.closest('#mult-edit')) multDraft = readMultDraft();
   if(e.target.id==='set-pv' || e.target.id==='set-cur') payDirty = true;
