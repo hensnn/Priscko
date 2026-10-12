@@ -40,7 +40,7 @@ Hráči se zadávají celou přezdívkou, u stolu se zobrazují jako žeton se z
 
 - výchozí jsou první dvě písmena (Pepík → **Pe**)
 - když už je obsazená, vezme se další písmeno jména (Petr → **Pt**, Pepa → **Pp**), u dvou slov iniciály (Petr Novák → **Pn**), jinak číslo (**P2**)
-- v záložce **Hráči** jde zkratku každému přepsat (1–3 znaky); obsazenou zkratku aplikace nepovolí
+- při přidávání hráče je vedle přezdívky kolonka **Zkratka** – vyplní se sama, ale jde přepsat; u existujících hráčů jde zkratka přepsat v jejich řádku (1–3 znaky); obsazenou zkratku aplikace nepovolí
 
 ## Soubory
 

@@ -257,6 +257,9 @@ table.daytbl{border-collapse:separate;border-spacing:0;width:100%;font-weight:80
 .daytbl tfoot tr+tr td{font-family:"Nunito";font-weight:900;font-size:13px;background:#fff}
 .daytbl .dd{font-size:11px;opacity:.6;font-weight:700}
 .legend{font-size:12px;font-weight:800;opacity:.7;margin-top:8px}
+.abbr-in.bad{border-color:var(--red);background:#ffe0e0}
+#new-abbr{flex:none;width:62px;height:46px}
+.abbr-hint{font-size:12px;font-weight:800;margin:-6px 0 10px;min-height:16px}
 .abbr-in{width:56px;text-align:center;font-family:var(--display);font-size:20px;border:3px solid var(--ink);border-radius:10px;padding:3px;background:#fff}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .stat{border:3px solid var(--ink);border-radius:14px;padding:10px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
@@ -457,12 +460,13 @@ body.ro .lockbtn{background:#fff}
     <div class="panel">
       <div class="tape"></div>
       <h2>👥 Hráči</h2>
-      <p class="sub">Celá přezdívka. U stolu se hráč ukazuje jen prvními dvěma písmeny.</p>
+      <p class="sub">Přezdívka celá, u stolu se hráč ukazuje zkratkou. Zkratka se vyplní sama z prvních písmen – můžeš ji přepsat.</p>
       <div class="edit-only" style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-        <span class="tok" id="new-tok" style="background:#bbb">?</span>
         <input class="txt" id="new-name" maxlength="24" placeholder="Přezdívka nového hráče">
+        <input class="abbr-in" id="new-abbr" maxlength="3" placeholder="Zk" aria-label="Zkratka u stolu" title="Zkratka u stolu">
         <button class="btn ok" id="add-player">Přidat</button>
       </div>
+      <div class="abbr-hint edit-only" id="abbr-hint"></div>
       <div class="rank" id="players"></div>
     </div>
   </section>
@@ -1383,24 +1387,40 @@ document.addEventListener('click', async e=>{
   }
 });
 
+let abbrTouched = false;   // zkratku v přidávání někdo ručně přepsal
 async function addPlayer(inputSel='#new-name'){
   const name=$(inputSel).value.trim().replace(/\s+/g,' ');
   if(!name){ toast('🤔 Hráč bez přezdívky je jen duch.'); return; }
-  if(await op({action:'add_player',name})){
+  const payload = {action:'add_player', name};
+  if(inputSel==='#new-name'){
+    const ab = cleanAbbr($('#new-abbr').value);
+    const owner = ab && takenAbbrs()[ab.toLocaleLowerCase('cs')];
+    if(owner){ toast(`✋ Zkratku „${ab}“ už má ${owner}. Zvol jinou.`); $('#new-abbr').focus(); return; }
+    if(ab) payload.abbr = ab;
+  }
+  if(await op(payload)){
     const added = db.players.find(p=>p.name===name);
     // prázdný výběr = u stolu všichni → nový hráč je tam automaticky, výběr neměnit
     if(added && ui.participants.length && !ui.participants.includes(added.id)){ ui.participants.push(added.id); saveUI(); render(); }
-    $(inputSel).value=''; updNewTok();
+    $(inputSel).value=''; abbrTouched=false; updNewTok();
     const ab = added ? abbrOf(added) : abbr(name);
-    toast(ab!==abbr(name) ? `🪑 ${name} přisedl jako „${ab}“ – „${abbr(name)}“ už u stolu někdo má.` : `🪑 ${name} si přisedl ke stolu jako „${ab}“.`);
+    toast(`🪑 ${name} si přisedl ke stolu jako „${ab}“.`);
   }
 }
+// kolonka Zkratka: dokud ji nikdo nepřepíše, vyplňuje se sama podle přezdívky
 function updNewTok(){
-  const n = $('#new-name').value.trim(), t = $('#new-tok');
-  t.textContent = n ? uniqueAbbr(n, takenAbbrs()) : '?';
-  t.style.background = n ? tokColor(n.replace(/\s+/g,' ')) : '#bbb';
+  const n = $('#new-name').value.trim(), inp = $('#new-abbr');
+  if(!abbrTouched) inp.value = n ? uniqueAbbr(n, takenAbbrs()) : '';
+  const ab = cleanAbbr(inp.value), owner = ab && takenAbbrs()[ab.toLocaleLowerCase('cs')];
+  inp.classList.toggle('bad', !!owner);
+  let hint = '';
+  if(owner) hint = `<span style="color:var(--red)">✋ Zkratku „${esc(ab)}“ už má ${esc(owner)}.</span>`;
+  else if(n && !abbrTouched && ab!==abbr(n)) hint = `ℹ️ „${esc(abbr(n))}“ už u stolu někdo má, proto „${esc(ab)}“.`;
+  $('#abbr-hint').innerHTML = hint;
 }
 $('#new-name').addEventListener('input', updNewTok);
+$('#new-abbr').addEventListener('input', e=>{ abbrTouched = e.target.value.trim()!==''; updNewTok(); });
+$('#new-abbr').addEventListener('keydown', e=>{ if(e.key==='Enter') addPlayer(); });
 // přepsání zkratky hráče: potvrdí se Enterem nebo opuštěním pole
 document.addEventListener('change', async e=>{
   const id = e.target.dataset && e.target.dataset.abbr; if(!id) return;
