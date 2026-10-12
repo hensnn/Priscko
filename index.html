@@ -302,6 +302,11 @@ table.daytbl{border-collapse:separate;border-spacing:0;width:100%;font-weight:80
 .daytbl tr.live td:first-child::after{content:" ●";color:var(--leaf)}
 .daytbl tfoot td{border-top:3px solid var(--ink);border-bottom:0;font-family:var(--display);font-weight:400;font-size:18px;background:#fff3c4}
 .daytbl tfoot tr+tr td{font-family:"Nunito";font-weight:900;font-size:13px;background:#fff}
+.daytbl tbody tr{cursor:pointer}
+.daytbl tbody tr:active td{filter:brightness(.92)}
+.daytbl tbody tr.sel td{box-shadow:inset 0 3px 0 var(--mustard),inset 0 -3px 0 var(--mustard)}
+.daytbl tbody tr.sel td:first-child{background:var(--mustard)}
+#daydetail .day{margin:14px 0 0}
 .daytbl .dd{font-size:11px;opacity:.6;font-weight:700}
 .legend{font-size:12px;font-weight:800;opacity:.7;margin-top:8px}
 .abbr-in.bad{border-color:var(--red);background:#ffe0e0}
@@ -474,6 +479,7 @@ body.ro .lockbtn{background:#fff}
       <h2>📅 Výsledky herních dnů</h2>
       <p class="sub">Jak dopadl každý herní den – kolik kdo ten den vyhrál nebo prohrál. Nejnovější nahoře.</p>
       <div id="daytable"></div>
+      <div id="daydetail"></div>
     </div>
     <div class="panel">
       <h2>🏆 Celkový žebříček</h2>
@@ -494,15 +500,6 @@ body.ro .lockbtn{background:#fff}
     </div>
   </section>
 
-  <!-- ===== KRONIKA ===== -->
-  <section class="view" id="v-kronika">
-    <div class="panel">
-      <div class="tape"></div>
-      <h2>📜 Kronika lijáků</h2>
-      <p class="sub">Herní dny s jejich žebříčkem a vyrovnáním. Hry každého dne rozbalíš pod ním.</p>
-      <div id="days"></div>
-    </div>
-  </section>
 
   <!-- ===== HRÁČI ===== -->
   <section class="view" id="v-hraci">
@@ -563,7 +560,6 @@ body.ro .lockbtn{background:#fff}
 <nav>
   <button class="on" data-v="den"><span class="i">🃏</span>Herní den</button>
   <button data-v="bilance"><span class="i">📒</span>Bilance</button>
-  <button data-v="kronika"><span class="i">📜</span>Kronika</button>
   <button data-v="hraci"><span class="i">👥</span>Hráči</button>
   <button data-v="nastaveni"><span class="i">⚙️</span>Nastavení</button>
 </nav>
@@ -1011,7 +1007,7 @@ function gamesList(games){
 function render(){
   if(!db) return;
   applyLock();
-  renderDen(); renderBilance(); renderKronika(); renderHraci(); renderNastaveni();
+  renderDen(); renderBilance(); renderHraci(); renderNastaveni();
 }
 const visiblePlayers = () => db.players.filter(p=>!p.hidden);
 
@@ -1166,7 +1162,7 @@ function renderDayTable(){
     if(max>0){ const k = Object.keys(r).filter(id=>r[id]===max); if(k.length===1) kings[k[0]]=(kings[k[0]]||0)+1; }
     const dt = parseIso(d.date);
     const head = `${dt.toLocaleDateString('cs-CZ',{weekday:'short'})} ${dt.getDate()}. ${dt.getMonth()+1}.<div class="dd">${d.games.length} ${d.games.length===1?'hra':d.games.length<5?'hry':'her'}</div>`;
-    return `<tr class="${d.closedTs?'':'live'}"><td>${head}</td>${cols.map(id=>{
+    return `<tr class="${d.closedTs?'':'live'}" data-day="${d.id}"><td>${head}</td>${cols.map(id=>{
       if(!(id in r)) return '<td class="na">·</td>';
       const v=r[id], cls = (v===max&&v>0)?'best':(v===min&&v<0)?'worst':'';
       return `<td class="${cls}">${cls==='best'?'👑 ':''}${fmt(v)}</td>`;
@@ -1181,7 +1177,8 @@ function renderDayTable(){
         <tr><td>👑 dnů</td>${cols.map(id=>`<td>${kings[id]||'·'}</td>`).join('')}</tr>
       </tfoot>
     </table></div>
-    <div class="legend">Částky v ${esc(db.settings.currency||'Kč')} · 👑 zelená = vítěz dne · červená = nejhorší dne · ● = den ještě běží · tabulka jde posouvat do strany</div>`;
+    <div class="legend">👆 Ťukni na den – ukážou se jeho hry a vyrovnání. · Částky v ${esc(db.settings.currency||'Kč')} · 👑 zelená = vítěz dne · červená = nejhorší · ● = den ještě běží · tabulka jde posouvat do strany</div>`;
+  renderDayDetail();
 }
 
 function renderBilance(){
@@ -1242,23 +1239,29 @@ function renderBilance(){
   ].map(([i,b,s])=>`<div class="stat"><span>${i} ${s}</span><b>${b}</b></div>`).join('');
 }
 
-function renderKronika(){
-  const days = allDays().filter(d=>d.games.length || !d.closedTs);
+// podrobnosti vybraného dne pod tabulkou v Bilanci (náhrada za Kroniku)
+let openDayId = null;
+function renderDayDetail(){
+  const box = $('#daydetail'); if(!box) return;
+  const days = allDays().filter(d=>d.games.length);
+  const d = days.find(x=>x.id===openDayId);
+  document.querySelectorAll('.daytbl tr[data-day]').forEach(tr=>tr.classList.toggle('sel', tr.dataset.day===openDayId));
+  if(!d){ box.innerHTML=''; return; }
   const open = openSession();
-  const lastClosed = days.find(d=>d.closedTs && !d.virtual);
-  if(!days.length){
-    $('#days').innerHTML = `<div class="empty"><span class="em">📭</span>Kronika je prázdná. Ještě nepršelo.</div>`;
-    return;
-  }
-  $('#days').innerHTML = days.map(d=>`
+  const lastClosed = allDays().find(x=>x.closedTs && !x.virtual && x.games.length);
+  box.innerHTML = `
     <div class="day">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+        <b style="font-size:13px;opacity:.7">📂 Podrobnosti dne</b>
+        <button class="btn small" data-day="">✖ Zavřít</button>
+      </div>
       ${dayHead(d)}
-      ${rankHtml(d.games, !d.closedTs)}
-      <h3 style="font-size:18px;margin:12px 0 6px">💸 ${d.closedTs?'Vyrovnání dne':'Zatím za dnešek'}</h3>
+      <h3 style="font-size:18px;margin:10px 0 6px">💸 ${d.closedTs?'Vyrovnání dne':'Zatím za dnešek'}</h3>
       ${debtsHtml(pairDebts(d.games), false)}
-      ${d.games.length?`<details class="games"><summary>🃏 Hry tohoto dne (${d.games.length})</summary><div class="hist">${gamesList(d.games)}</div></details>`:''}
+      <h3 style="font-size:18px;margin:14px 0 6px">🃏 Hry (${d.games.length})</h3>
+      <div class="hist">${gamesList(d.games)}</div>
       ${!open && lastClosed && d.id===lastClosed.id ? `<div style="text-align:right;margin-top:10px"><button class="btn small edit-only" data-reopen="${d.id}">↩️ Znovu otevřít den</button></div>`:''}
-    </div>`).join('');
+    </div>`;
 }
 
 function renderHraci(){
@@ -1316,10 +1319,18 @@ function setPoints(v){
 }
 
 document.addEventListener('click', async e=>{
+  const row = e.target.closest('.daytbl tr[data-day]');
+  if(row){
+    openDayId = openDayId===row.dataset.day ? null : row.dataset.day;
+    renderDayDetail();
+    if(openDayId) setTimeout(()=>$('#daydetail').scrollIntoView({behavior:'smooth',block:'start'}), 50);
+    return;
+  }
   const t = e.target.closest('button'); if(!t) return;
   const d = t.dataset;
 
   if(d.v){ showView(d.v); return; }
+  if(d.day!==undefined){ openDayId = d.day || null; renderDayDetail(); return; }
   if(t.id==='lock' || t.id==='pw-lock'){
     if(canEdit()) lockNow();
     else { showView('nastaveni'); setTimeout(()=>{ const i=$('#pw-in')||$('#pw-new'); if(i) i.focus(); }, 300); }

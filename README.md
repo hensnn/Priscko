@@ -30,9 +30,8 @@ Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádá
 1. Na začátku večera **Začít herní den**
 2. Nahoře je rovnou formulář **Další hra**, pod ním hry dne a průběžný žebříček, úplně dole **Kdo dnes hraje** a ukončení dne
 3. Na konci **Ukončit herní den** – spočítá se žebříček dne (král / utopenec večera) a vyrovnání dne: dluhy mezi dvojicemi se vzájemně odečtou (A dluží B 92, B dluží A 40 → A dluží B 52)
-4. Záložka **Bilance**: nahoře tabulka **Výsledky herních dnů** (dny × hráči, vítěz dne zeleně s 👑, nejhorší červeně, dole součet a počet vyhraných dnů), pod ní **Celkový žebříček**, pak **Kdo komu dluží** (označení jako vyrovnané) a statistiky
+4. Záložka **Bilance**: nahoře tabulka **Výsledky herních dnů** (dny × hráči, vítěz dne zeleně s 👑, nejhorší červeně, dole součet a počet vyhraných dnů; **ťuknutím na den** se pod tabulkou rozbalí jeho hry, vyrovnání dne a případně „Znovu otevřít den“), pod ní **Celkový žebříček**, pak **Kdo komu dluží** (označení jako vyrovnané) a statistiky
 
-Kronika ukazuje všechny herní dny s jejich žebříčkem; hry každého dne se rozbalí pod ním.
 
 > Na GitHub Pages (bez PHP) běží aplikace v offline režimu – data se ukládají jen v prohlížeči. Pro sdílení mezi telefony je potřeba server s PHP (níže).
 
