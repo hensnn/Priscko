@@ -306,6 +306,7 @@ body.ro .lockbtn{background:#fff}
 .medit input.mt{flex:1}
 .pwrow{display:flex;gap:8px;flex-wrap:wrap}
 .pwrow input{flex:1;min-width:150px}
+.btn.dirty{background:var(--mustard);animation:pulse 1.2s infinite}
 .okbox{background:#c9f7d3;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;font-weight:900;margin-bottom:10px}
 .dayline{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px;margin:2px 0 2px;flex-wrap:wrap;opacity:.85}
 .dayline .pill{border-color:var(--ink);color:#fff}
@@ -990,9 +991,10 @@ function readMultDraft(){
 }
 function renderNastaveni(){
   const editing = el => document.activeElement===el;
+  const typingIn = box => { const fe=document.activeElement; return box.contains(fe) && fe.tagName==='INPUT'; };
   // heslo
   const box = $('#pw-box');
-  if(!box.contains(document.activeElement)){
+  if(!typingIn(box)){
     if(canEdit()){
       box.innerHTML = `
         <div class="okbox">✅ Úpravy jsou na tomhle zařízení odemčené.</div>
@@ -1025,7 +1027,7 @@ function renderNastaveni(){
   $('#coef-ro').textContent = 'koeficient ' + numC(pv()) + ' · měna ' + (db.settings.currency||'Kč');
   $('#mult-ro').innerHTML = `<div class="chips">${mults().map(x=>`<span class="chip plain" style="cursor:default"><b>×${numC(+x.m)}</b> ${esc(x.t)}</span>`).join('')}</div>`;
   const ed = $('#mult-edit');
-  if(!ed.contains(document.activeElement)){
+  if(!typingIn(ed)){
     const list = multDraft || mults();
     ed.innerHTML = list.map((x,i)=>`
       <div class="medit">
@@ -1035,6 +1037,9 @@ function renderNastaveni(){
         <button class="btn sq danger" data-mdel="${i}" title="Odebrat" style="width:42px;height:42px;font-size:18px">🗑️</button>
       </div>`).join('');
   }
+  const dirty = multDraft!==null || payDirty;
+  $('#save-set').classList.toggle('dirty', dirty);
+  $('#save-set').textContent = dirty ? '💾 Uložit změny – zatím neuloženo!' : '💾 Uložit platbu a násobky';
 }
 
 function renderBilance(){
@@ -1179,12 +1184,16 @@ document.addEventListener('click', async e=>{
   if(t.id==='mult-add'){
     multDraft = readMultDraft();
     const next = Math.max(0,...multDraft.map(x=>+x.m||0)) + 1;
-    multDraft.push({m:next, t:''}); renderNastaveni();
+    multDraft.push({m:next, t:''}); t.blur(); renderNastaveni();
     const ins = document.querySelectorAll('#mult-edit .mt'); if(ins.length) ins[ins.length-1].focus();
     return;
   }
   if(d.mdel!==undefined){
-    multDraft = readMultDraft(); multDraft.splice(+d.mdel,1); renderNastaveni(); return;
+    const draft = readMultDraft();
+    if(draft.length<=1){ toast('🙅 Aspoň jeden násobek musí zůstat.'); return; }
+    draft.splice(+d.mdel,1); multDraft = draft;
+    t.blur(); renderNastaveni();
+    toast('🗑️ Odebráno – nezapomeň dole Uložit.'); return;
   }
 
   if(t.id==='start-day'){
@@ -1297,6 +1306,9 @@ $('#new-name').addEventListener('input', updNewTok);
 document.addEventListener('input', e=>{
   if(e.target.closest && e.target.closest('#mult-edit')) multDraft = readMultDraft();
   if(e.target.id==='set-pv' || e.target.id==='set-cur') payDirty = true;
+  if(e.target.closest && (e.target.closest('#mult-edit') || e.target.id==='set-pv' || e.target.id==='set-cur')){
+    const b=$('#save-set'); b.classList.add('dirty'); b.textContent='💾 Uložit změny – zatím neuloženo!';
+  }
 });
 document.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return;
