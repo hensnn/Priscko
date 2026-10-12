@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # =====================================================================
 #  Prsíčko – instalace na vlastní server s Caddy
-#  Instaluje se VEDLE jiných webů (např. Šachového Orákula):
-#    vlastní složka /var/www/prsicko a vlastní port 8080.
+#  Instaluje se vedle ostatních webů: vlastní složka a vlastní port
+#  (výchozí /var/www/prsicko a 8080), ostatní weby nechá být.
 #  Stejný příkaz slouží i k aktualizaci – data, heslo i Caddyfile zůstanou.
 #  Spuštění (jako root):
 #    bash <(curl -fsSL https://raw.githubusercontent.com/hensnn/Priscko/main/install-caddy.sh)
@@ -56,7 +56,7 @@ else
   cat >> "$CF" <<EOF
 
 $MARK
-# Prsíčko – vlastní web na portu $PORT (HTTPS řeší reverzní proxy, např. Nginx Proxy Manager)
+# Prsíčko – vlastní web na portu $PORT (HTTPS a doménu řeší reverzní proxy)
 :$PORT {
         root * $WEB
 
@@ -96,5 +96,5 @@ echo
 echo "✅ Prsíčko běží na http://$IP:$PORT/"
 echo "   1) Otevři ho a HNED v ⚙️ Nastavení zvol heslo pro úpravy."
 echo "      (Dokud heslo není, může ho zvolit kdokoli, kdo stránku otevře první.)"
-echo "   2) Pro přístup zvenku přidej v Nginx Proxy Manageru Proxy Host → http://$IP:$PORT"
+echo "   2) Pro přístup zvenku nasměruj na http://$IP:$PORT svou reverzní proxy (HTTPS, doména)."
 echo "   Data: $WEB/data/prsicko.json (zálohuj si ho občas)"
