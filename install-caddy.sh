@@ -12,7 +12,7 @@
 set -euo pipefail
 
 WEB="${PRSICKO_DIR:-/var/www/prsicko}"
-PORT="${PRSICKO_PORT:-8080}"
+PORT="${PRSICKO_PORT:-}"
 REPO=https://raw.githubusercontent.com/hensnn/Priscko/main
 MARK="# --- Prsíčko ---"
 
@@ -23,7 +23,7 @@ fi
 
 echo "☔ 1/6 Instaluji PHP…"
 apt-get update -qq
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-fpm php-cli php-mbstring curl >/dev/null
+DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-fpm php-cli php-mbstring curl iproute2 >/dev/null
 SOCK=$(ls /run/php/php*-fpm.sock 2>/dev/null | head -1 || true)
 if [ -z "$SOCK" ]; then
   systemctl restart "$(systemctl list-unit-files 'php*-fpm.service' --no-legend | awk '{print $1}' | head -1)"
@@ -48,13 +48,27 @@ fi
 chown -R www-data:www-data "$WEB/data"
 chmod 750 "$WEB/data"
 
-echo "☔ 4/6 Nastavuji Caddy (port $PORT)…"
 CF=/etc/caddy/Caddyfile
 touch "$CF"
+port_busy() { ss -ltnH "( sport = :$1 )" 2>/dev/null | grep -q .; }
+
+# Port: při aktualizaci ten, co už je v Caddyfile; jinak zadaný, nebo první volný od 8080
+if grep -qF "$MARK" "$CF"; then
+  PORT=$(sed -n "/$MARK/,/{/s/^:\([0-9]\+\) {.*/\1/p" "$CF" | head -1)
+elif [ -n "$PORT" ]; then
+  if port_busy "$PORT"; then echo "❌ Port $PORT už používá jiná služba. Zvol jiný: PRSICKO_PORT=… "; exit 1; fi
+else
+  for p in $(seq 8080 8099); do if ! port_busy "$p"; then PORT=$p; break; fi; done
+  [ -n "$PORT" ] || { echo "❌ Porty 8080–8099 jsou všechny obsazené. Zvol jiný: PRSICKO_PORT=…"; exit 1; }
+fi
+
+echo "☔ 4/6 Nastavuji Caddy (port $PORT)…"
+BACKUP=""
 if grep -qF "$MARK" "$CF"; then
   echo "   Caddyfile už Prsíčko obsahuje – nechávám ho být (aktualizace)."
 else
-  cp "$CF" "$CF.zaloha-$(date +%Y%m%d-%H%M%S)"
+  BACKUP="$CF.zaloha-$(date +%Y%m%d-%H%M%S)"
+  cp "$CF" "$BACKUP"
   cat >> "$CF" <<EOF
 
 $MARK
@@ -73,7 +87,7 @@ $MARK
 EOF
   if ! caddy validate --config "$CF" --adapter caddyfile >/dev/null 2>&1; then
     echo "❌ Caddyfile po úpravě neprošel kontrolou. Vracím zálohu."
-    cp "$(ls -t "$CF".zaloha-* | head -1)" "$CF"
+    cp "$BACKUP" "$CF"
     caddy validate --config "$CF" --adapter caddyfile || true
     exit 1
   fi
@@ -81,10 +95,19 @@ EOF
 fi
 # Caddy musí smět mluvit s PHP (socket patří skupině www-data)
 id caddy >/dev/null 2>&1 && usermod -aG www-data caddy
-systemctl restart caddy
+systemctl restart caddy || true
+sleep 2
+if ! systemctl is-active --quiet caddy; then
+  echo "❌ Caddy se s novým nastavením nespustil:"
+  journalctl -u caddy -n 5 --no-pager | grep -i error || true
+  if [ -n "$BACKUP" ]; then
+    echo "   Vracím původní Caddyfile, aby ostatní weby dál běžely."
+    cp "$BACKUP" "$CF"; systemctl restart caddy || true
+  fi
+  exit 1
+fi
 
 echo "☔ 5/6 Kontrola…"
-sleep 1
 if curl -fsS "http://127.0.0.1:$PORT/api.php" | grep -q '"players"'; then
   echo "   api.php odpovídá."
 else

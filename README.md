@@ -73,7 +73,7 @@ Potřeba je webový server s **PHP 7.4+**.
 bash <(curl -fsSL https://raw.githubusercontent.com/hensnn/Priscko/main/install-caddy.sh)
 ```
 
-Skript nainstaluje PHP, nahraje aplikaci do `/var/www/prsicko` a přidá do `Caddyfile` samostatný web na portu `8080`. Původní `Caddyfile` zazálohuje, ostatní weby nemění. Opětovné spuštění aplikaci aktualizuje a zachová data i heslo.
+Skript nainstaluje PHP, nahraje aplikaci do `/var/www/prsicko` a přidá do `Caddyfile` samostatný web na prvním volném portu od `8080` (adresu vypíše na konci). Původní `Caddyfile` zazálohuje, ostatní weby nemění; když by se Caddy s novým nastavením nespustil, zálohu sám vrátí. Opětovné spuštění aplikaci aktualizuje a zachová data, heslo i port.
 
 Jiná složka nebo port:
 
