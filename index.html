@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14532d">
+<title>Prsíčko ☔ Úřad pro evidenci deště karet</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☔</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --felt:#1d6b3a; --felt2:#14532d;
+  --paper:#fff8e7; --ink:#1b1b1b; --red:#d62828; --orange:#e85d04;
+  --mustard:#f4b400; --leaf:#2d9e46; --sky:#7cc6fe;
+  --shadow:4px 4px 0 var(--ink);
+  --display:"Bangers",Impact,"Arial Black",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:"Nunito",system-ui,sans-serif; color:var(--ink);
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,.08), transparent 40%),
+    repeating-radial-gradient(circle at 50% 50%, var(--felt) 0 2px, var(--felt2) 2px 4px);
+  background-attachment:fixed;
+  min-height:100vh; padding-bottom:96px; overflow-x:hidden;
+}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px}
+
+/* ---------- HLAVIČKA ---------- */
+header{position:relative;padding:18px 0 6px;text-align:center}
+.cloud{font-size:42px;display:inline-block;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-6deg)}}
+h1{
+  font-family:var(--display); font-size:clamp(56px,16vw,96px); line-height:.9;
+  margin:0; letter-spacing:3px; color:var(--mustard);
+  -webkit-text-stroke:3px var(--ink); paint-order:stroke fill;
+  text-shadow:6px 6px 0 var(--ink); transform:rotate(-4deg);
+  cursor:pointer; user-select:none;
+}
+h1:active{transform:rotate(4deg) scale(.96)}
+.stamp{
+  display:inline-block; margin-top:10px; padding:4px 10px; border:3px solid var(--red);
+  color:var(--red); background:var(--paper); font-weight:900; font-size:12px; letter-spacing:1px;
+  text-transform:uppercase; transform:rotate(3deg); border-radius:6px; box-shadow:var(--shadow);
+}
+.fan{display:flex;justify-content:center;margin:14px 0 4px;height:92px}
+.fan .mcard{margin:0 -14px;transform-origin:50% 120%;transition:transform .2s}
+.fan .mcard:nth-child(1){transform:rotate(-24deg)}
+.fan .mcard:nth-child(2){transform:rotate(-8deg) translateY(-6px)}
+.fan .mcard:nth-child(3){transform:rotate(8deg) translateY(-6px)}
+.fan .mcard:nth-child(4){transform:rotate(24deg)}
+.fan:hover .mcard:nth-child(1){transform:rotate(-34deg)}
+.fan:hover .mcard:nth-child(4){transform:rotate(34deg)}
+.ticker{
+  margin:8px auto 0; max-width:520px; background:var(--ink); color:var(--mustard);
+  border-radius:999px; padding:6px 14px; font-weight:700; font-size:13px;
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+}
+.offline{
+  margin:10px auto 0;max-width:520px;background:var(--mustard);border:3px solid var(--ink);
+  border-radius:12px;padding:8px 12px;font-weight:700;font-size:13px;box-shadow:var(--shadow);display:none
+}
+
+/* ---------- MARIÁŠOVÁ KARTA ---------- */
+.mcard{
+  width:58px;height:86px;flex:none;background:var(--paper);border:3px solid var(--ink);
+  border-radius:9px;box-shadow:3px 3px 0 var(--ink);position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.mcard svg{width:30px;height:30px}
+.mcard .cv{position:absolute;top:2px;left:5px;font-family:var(--display);font-size:15px;line-height:1}
+.mcard .cv.b{top:auto;left:auto;bottom:2px;right:5px;transform:rotate(180deg)}
+.mcard.mini{width:34px;height:50px;border-width:2px;border-radius:6px;box-shadow:2px 2px 0 var(--ink)}
+.mcard.mini svg{width:18px;height:18px}
+.mcard.mini .cv{font-size:10px}
+
+/* ---------- ŽETON HRÁČE (2 písmena) ---------- */
+.tok{
+  width:42px;height:42px;border-radius:50%;border:3px solid var(--ink);flex:none;
+  display:inline-grid;place-items:center;font-family:var(--display);font-size:20px;letter-spacing:.5px;
+  color:#fff;-webkit-text-stroke:1px var(--ink);paint-order:stroke fill;
+  box-shadow:2px 2px 0 var(--ink);line-height:1
+}
+.tok.s{width:28px;height:28px;font-size:14px;border-width:2px;box-shadow:1px 1px 0 var(--ink)}
+.tok.l{width:62px;height:62px;font-size:28px;border-width:4px}
+
+/* ---------- PANELY ---------- */
+.panel{
+  background:var(--paper);border:3px solid var(--ink);border-radius:18px;
+  box-shadow:6px 6px 0 var(--ink);padding:16px;margin:18px 0;position:relative;
+}
+.panel:nth-of-type(odd){transform:rotate(-.6deg)}
+.panel:nth-of-type(even){transform:rotate(.5deg)}
+.panel h2{
+  font-family:var(--display);font-size:28px;letter-spacing:1px;margin:0 0 4px;
+  display:flex;align-items:center;gap:8px
+}
+.panel .sub{margin:0 0 12px;font-size:13px;opacity:.7;font-weight:700}
+.tape{
+  position:absolute;top:-12px;left:50%;width:90px;height:22px;margin-left:-45px;
+  background:rgba(244,180,0,.75);transform:rotate(-3deg);border:2px dashed rgba(0,0,0,.25)
+}
+.step{
+  display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  background:var(--ink);color:var(--mustard);font-family:var(--display);font-size:16px;flex:none
+}
+label.lbl{display:flex;align-items:center;gap:8px;font-weight:900;margin:18px 0 8px}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  border:3px solid var(--ink);background:#fff;border-radius:999px;padding:5px 12px 5px 5px;
+  font-weight:800;cursor:pointer;box-shadow:3px 3px 0 var(--ink);
+  display:inline-flex;align-items:center;gap:7px;transition:transform .08s;user-select:none
+}
+.chip.plain{padding:7px 12px}
+.chip:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.chip.on{background:var(--mustard)}
+.chip.flag.on{background:var(--sky)}
+.chip .em{font-size:18px}
+.chip[disabled]{opacity:.3;pointer-events:none}
+
+/* žetony u stolu – výběr vítěze / poraženého */
+.seats{display:flex;flex-wrap:wrap;gap:12px}
+.seat{
+  border:0;background:none;padding:0;cursor:pointer;position:relative;transition:transform .12s
+}
+.seat .tok{width:58px;height:58px;font-size:26px;border-width:4px;box-shadow:3px 3px 0 var(--ink)}
+.seat:active{transform:scale(.92)}
+.seat[disabled]{opacity:.25;pointer-events:none}
+.seat.on .tok{outline:5px solid var(--mustard);outline-offset:2px;transform:rotate(-10deg) scale(1.08)}
+.seat.on::after{
+  content:attr(data-badge);position:absolute;top:-10px;right:-10px;font-size:22px;
+  filter:drop-shadow(1px 1px 0 var(--ink))
+}
+
+/* body + násobek */
+.pts{display:flex;align-items:center;gap:8px}
+.pts input[type=number]{
+  width:96px;text-align:center;font-family:var(--display);font-size:32px;padding:4px 6px;
+  border:3px solid var(--ink);border-radius:12px;background:#fff;box-shadow:3px 3px 0 var(--ink)
+}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:18px;margin:14px 0 4px;
+  background:repeating-linear-gradient(90deg,#fff 0 10px,#ffe9a8 10px 20px);
+  border:3px solid var(--ink);border-radius:999px;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:38px;height:38px;border-radius:50%;cursor:pointer;
+  background:var(--red);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)
+}
+input[type=range]::-moz-range-thumb{
+  width:34px;height:34px;border-radius:50%;cursor:pointer;
+  background:var(--red);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)
+}
+.mults{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mult{
+  border:3px solid var(--ink);background:#fff;border-radius:14px;padding:8px 4px;cursor:pointer;
+  box-shadow:3px 3px 0 var(--ink);text-align:center;font-weight:800;font-size:11px;line-height:1.15
+}
+.mult b{display:block;font-family:var(--display);font-size:32px;font-weight:400;letter-spacing:1px}
+.mult.on{background:var(--red);color:#fff}
+.mult:nth-child(4).on{background:linear-gradient(135deg,var(--red),var(--orange))}
+.mult:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+
+.btn{
+  border:3px solid var(--ink);background:#fff;border-radius:12px;padding:8px 12px;font-weight:900;
+  cursor:pointer;box-shadow:3px 3px 0 var(--ink)
+}
+.btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn.sq{width:46px;height:46px;font-size:22px;padding:0;flex:none}
+.btn.small{padding:5px 9px;font-size:13px}
+.btn.danger{background:#ffd6d6}
+.btn.ok{background:#c9f7d3}
+input.txt{
+  width:100%;border:3px solid var(--ink);border-radius:12px;padding:10px;background:#fff;font-weight:700
+}
+.big{
+  display:block;width:100%;margin-top:18px;padding:16px;font-family:var(--display);font-size:30px;
+  letter-spacing:1.5px;background:var(--red);color:#fff;border:4px solid var(--ink);border-radius:16px;
+  box-shadow:6px 6px 0 var(--ink);cursor:pointer;transform:rotate(-1deg)
+}
+.big:active{transform:rotate(1deg) translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.big[disabled]{background:#999;cursor:not-allowed}
+.preview{
+  margin-top:16px;padding:12px;border:3px dashed var(--ink);border-radius:12px;background:#fff3c4;
+  font-weight:900;text-align:center;font-size:16px
+}
+.preview .who{display:flex;justify-content:center;align-items:center;gap:10px;font-size:26px}
+.preview .calc{font-size:15px;margin-top:6px;opacity:.75}
+.preview .sum{font-family:var(--display);font-size:38px;color:var(--red);letter-spacing:1px;line-height:1.1}
+
+/* ---------- BILANCE ---------- */
+.rank{display:flex;flex-direction:column;gap:10px}
+.row{
+  display:flex;align-items:center;gap:10px;padding:10px;border:3px solid var(--ink);border-radius:14px;
+  background:#fff;box-shadow:3px 3px 0 var(--ink)
+}
+.row .nm{font-weight:900;font-size:17px;line-height:1.1}
+.row .tt{font-size:12px;font-weight:700;opacity:.7}
+.row .val{margin-left:auto;font-family:var(--display);font-size:26px;letter-spacing:.5px;white-space:nowrap}
+.pos{color:#15803d}.neg{color:var(--red)}.zero{color:#666}
+.debt{flex-wrap:wrap}
+.debt .arrow{font-size:22px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{border:3px solid var(--ink);border-radius:14px;padding:10px;background:#fff;box-shadow:3px 3px 0 var(--ink)}
+.stat b{display:block;font-family:var(--display);font-size:26px;font-weight:400;letter-spacing:.5px}
+.stat span{font-size:12px;font-weight:800;opacity:.7}
+
+/* ---------- KRONIKA ---------- */
+.hist{display:flex;flex-direction:column;gap:12px}
+.hg{border:3px solid var(--ink);border-radius:14px;background:#fff;padding:10px 12px;box-shadow:3px 3px 0 var(--ink)}
+.hg:nth-child(3n){transform:rotate(.4deg)}
+.hg:nth-child(3n+1){transform:rotate(-.4deg)}
+.hg .top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;opacity:.65}
+.hg .main{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;font-weight:900}
+.hg .amt{margin-left:auto;text-align:right;font-family:var(--display);font-size:24px;color:var(--red);line-height:1}
+.hg .amt small{display:block;font-family:"Nunito";font-weight:800;font-size:12px;color:var(--ink);opacity:.7}
+.hg .fl{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.tag{font-size:12px;font-weight:800;border:2px solid var(--ink);border-radius:999px;padding:2px 8px;background:#e8f6ff}
+.tag.m{background:var(--red);color:#fff}
+.hg.settle{background:#eafbe9}
+.hg .note{font-size:13px;font-style:italic;margin-top:4px}
+.watchers{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:12px;font-weight:700}
+.empty{text-align:center;padding:22px 10px;font-weight:800;opacity:.75}
+.empty .em{font-size:48px;display:block}
+
+/* ---------- SPODNÍ MENU ---------- */
+nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--ink);
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:6px
+}
+nav button{
+  flex:1;max-width:150px;border:0;background:transparent;color:#fff;font-weight:900;font-size:12px;
+  padding:6px 4px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px
+}
+nav button .i{font-size:22px;transition:transform .2s}
+nav button.on{background:var(--mustard);color:var(--ink)}
+nav button.on .i{transform:rotate(-12deg) scale(1.15)}
+.view{display:none}.view.on{display:block}
+
+/* ---------- DÉŠŤ KARET ---------- */
+.rain{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.drop{position:absolute;top:-110px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(calc(100vh + 220px)) rotate(var(--r))}}
+.toast{
+  position:fixed;left:50%;bottom:100px;transform:translateX(-50%) rotate(-2deg);z-index:60;
+  background:var(--mustard);border:4px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);
+  padding:12px 16px;font-weight:900;max-width:92vw;text-align:center;animation:pop .25s ease-out
+}
+@keyframes pop{from{transform:translateX(-50%) scale(.6) rotate(8deg);opacity:0}}
+.foot{text-align:center;color:#d8f3dc;font-size:12px;font-weight:700;opacity:.8;margin:20px 0}
+@media (prefers-reduced-motion:reduce){
+  .cloud,.drop{animation:none!important}.drop{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="cloud" aria-hidden="true">🌧️</div>
+  <h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1>
+  <div class="stamp">☔ Úřad pro evidenci deště karet · prší, nebo platíš</div>
+  <div class="fan" id="fan" aria-hidden="true"></div>
+  <div class="ticker" id="ticker">Načítám předpověď…</div>
+  <div class="offline" id="offline">🔌 Offline režim – server neodpověděl, data se ukládají jen v tomhle prohlížeči.</div>
+</header>
+
+<main class="wrap">
+
+  <!-- ===== NOVÉ KOLO ===== -->
+  <section class="view on" id="v-kolo">
+    <div class="panel">
+      <div class="tape"></div>
+      <h2>🃏 Nové kolo Prsíčka</h2>
+      <p class="sub">Body v ruce poraženého × násobek zavření = kolik platí vítězi.</p>
+
+      <label class="lbl"><span class="step">1</span> Kdo sedí u stolu?</label>
+      <div class="chips" id="pick-part"></div>
+
+      <label class="lbl"><span class="step">2</span> 🏆 Kdo zavřel (vítěz)</label>
+      <div class="seats" id="pick-win"></div>
+
+      <label class="lbl"><span class="step">3</span> 💧 Kdo zůstal s kartami (poražený)</label>
+      <div class="seats" id="pick-lose"></div>
+
+      <label class="lbl"><span class="step">4</span> 🃏 Kolik bodů měl poražený v ruce</label>
+      <div class="pts">
+        <button class="btn sq" data-pt="-1">−</button>
+        <input id="pts" type="number" inputmode="numeric" min="0" max="999" placeholder="?">
+        <button class="btn sq" data-pt="1">+</button>
+        <span style="font-weight:900">bodů</span>
+      </div>
+      <input id="pts-range" type="range" min="0" max="120" step="1" value="0" aria-label="Body v ruce">
+
+      <label class="lbl"><span class="step">5</span> ✖️ Jak vítěz zavřel – násobek</label>
+      <div class="mults" id="pick-mult"></div>
+
+      <label class="lbl"><span class="step">6</span> 🏷️ Příznaky kola <span style="opacity:.5;font-weight:700">(nepovinné)</span></label>
+      <div class="chips" id="pick-flags"></div>
+
+      <label class="lbl"><span class="step">7</span> ✍️ Poznámka pro budoucí archeology</label>
+      <input class="txt" id="note" maxlength="120" placeholder="např. „Hrálo se pod stolem, protože pršelo i dovnitř“">
+
+      <div class="preview" id="preview"></div>
+      <button class="big" id="save">💸 ZAPLAŤ, NEŠŤASTNÍKU!</button>
+    </div>
+  </section>
+
+  <!-- ===== BILANCE ===== -->
+  <section class="view" id="v-bilance">
+    <div class="panel">
+      <div class="tape"></div>
+      <h2>📒 Bilance</h2>
+      <p class="sub">Celkový stav peněženek po všech kolech a vyrovnáních.</p>
+      <div class="rank" id="rank"></div>
+    </div>
+    <div class="panel">
+      <h2>🤝 Kdo komu dluží</h2>
+      <p class="sub">Počítá se jen mezi vítězem a poraženým. Ostatní u stolu jen přihlíželi a mokli.</p>
+      <div class="rank" id="debts"></div>
+    </div>
+    <div class="panel">
+      <h2>📊 Meteorologická statistika</h2>
+      <p class="sub">Vědecky nepodložené, přesto závazné.</p>
+      <div class="stats" id="stats"></div>
+    </div>
+  </section>
+
+  <!-- ===== KRONIKA ===== -->
+  <section class="view" id="v-historie">
+    <div class="panel">
+      <div class="tape"></div>
+      <h2>📜 Kronika lijáků</h2>
+      <p class="sub">Filtruj podle hráče, ať víš, komu se nejvíc pršelo.</p>
+      <div class="chips" id="hist-filter" style="margin-bottom:14px"></div>
+      <div class="hist" id="hist"></div>
+    </div>
+  </section>
+
+  <!-- ===== HRÁČI ===== -->
+  <section class="view" id="v-hraci">
+    <div class="panel">
+      <div class="tape"></div>
+      <h2>👥 Hráči</h2>
+      <p class="sub">Celá přezdívka. U stolu se hráč ukazuje jen prvními dvěma písmeny.</p>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <span class="tok" id="new-tok" style="background:#bbb">?</span>
+        <input class="txt" id="new-name" maxlength="24" placeholder="Přezdívka nového hráče">
+        <button class="btn ok" id="add-player">Přidat</button>
+      </div>
+      <div class="rank" id="players"></div>
+    </div>
+    <div class="panel">
+      <h2>⚙️ Nastavení</h2>
+      <label class="lbl">Cena jednoho bodu</label>
+      <div style="display:flex;gap:8px">
+        <input class="txt" id="set-pv" type="number" inputmode="decimal" min="0.01" step="0.01" style="max-width:140px">
+        <input class="txt" id="set-cur" maxlength="8" style="max-width:100px">
+        <button class="btn ok" id="save-set">Uložit</button>
+      </div>
+      <p class="sub" style="margin-top:8px">Platí se: body × násobek × cena bodu. Změna platí jen pro nová kola.</p>
+      <label class="lbl">Záloha</label>
+      <button class="btn" id="export">⬇️ Stáhnout databázi (JSON)</button>
+    </div>
+  </section>
+
+  <div class="foot">Prsíčko · neoficiální, nezávislé, mírně vlhké · <span id="mode"></span></div>
+</main>
+
+<nav>
+  <button class="on" data-v="kolo"><span class="i">🃏</span>Kolo</button>
+  <button data-v="bilance"><span class="i">📒</span>Bilance</button>
+  <button data-v="historie"><span class="i">📜</span>Kronika</button>
+  <button data-v="hraci"><span class="i">👥</span>Hráči</button>
+</nav>
+
+<script>
+/* =========================================================
+   Prsíčko – sčítání her v prší
+   Platba za kolo = body v ruce poraženého × násobek zavření × cena bodu
+   Data: api.php -> data/prsicko.json (fallback: localStorage)
+   ========================================================= */
+
+const API = 'api.php';
+const LS_DB = 'prsicko_db_offline';
+const LS_UI = 'prsicko_ui';
+
+/* --- mariášové barvy (vlastní jednoduché kresby) --- */
+const SUITS = {
+  srdce: '<svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.6.7-1.4 2.2-2.6 4.3-2.6 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z" fill="#d62828" stroke="#1b1b1b" stroke-width="1.4"/></svg>',
+  kule:  '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#e85d04" stroke="#1b1b1b" stroke-width="1.4"/><circle cx="12" cy="12" r="4.5" fill="#ffd166" stroke="#1b1b1b" stroke-width="1.2"/><circle cx="12" cy="12" r="1.4" fill="#1b1b1b"/></svg>',
+  zelene:'<svg viewBox="0 0 24 24"><path d="M12 2C6 7 4 12 6 17c1.3 3 3.6 4.5 6 5 2.4-.5 4.7-2 6-5 2-5 0-10-6-15z" fill="#2d9e46" stroke="#1b1b1b" stroke-width="1.4"/><path d="M12 6v15M12 11l-3-2M12 14l3-2M12 17l-3-2" stroke="#1b1b1b" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>',
+  zaludy:'<svg viewBox="0 0 24 24"><ellipse cx="12" cy="15" rx="5.5" ry="6.5" fill="#d39b52" stroke="#1b1b1b" stroke-width="1.4"/><path d="M5 11c0-4 3-6.5 7-6.5S19 7 19 11z" fill="#8a5523" stroke="#1b1b1b" stroke-width="1.4"/><path d="M12 4.5V2" stroke="#1b1b1b" stroke-width="1.6" stroke-linecap="round"/></svg>'
+};
+const SUIT_KEYS = Object.keys(SUITS);
+const VAL_POOL = ['VII','VIII','IX','X','Sp','Sv','K','A'];
+function card(suit, val, mini){
+  return `<div class="mcard${mini?' mini':''}"><span class="cv">${val}</span>${SUITS[suit]}<span class="cv b">${val}</span></div>`;
+}
+const rnd = a => a[Math.floor(Math.random()*a.length)];
+
+/* --- násobky zavření --- */
+const MULTS = [
+  {m:1, t:'obyčejně'},
+  {m:2, t:'dvojitě'},
+  {m:3, t:'trojitě'},
+  {m:4, t:'červeným svrškem'},
+];
+
+/* --- příznaky kola --- */
+const FLAGS = [
+  {id:'sedmy',   i:'7️⃣',  t:'Sedmičková smršť'},
+  {id:'eso',     i:'🛑',  t:'Eso stojí'},
+  {id:'plna',    i:'🤲',  t:'Plná ruka'},
+  {id:'blesk',   i:'⚡',  t:'Bleskovka'},
+  {id:'lijak',   i:'🌧️', t:'Nekonečný liják'},
+  {id:'podvod',  i:'🕵️', t:'Podezření z podvodu'},
+  {id:'pivo',    i:'🍺',  t:'Polito pivem'},
+  {id:'spanek',  i:'😴',  t:'Usnul u stolu'},
+  {id:'kecal',   i:'🗣️', t:'Kecal do karet'},
+  {id:'odveta',  i:'🔁',  t:'Odveta'},
+  {id:'zazrak',  i:'🦄',  t:'Zázrak'},
+];
+const flagById = id => FLAGS.find(f=>f.id===id) || {i:'🏷️',t:id};
+
+const QUOTES = [
+  'Výstraha: místy přívalové sedmy, ojediněle červený svršek.',
+  'Dnes prší s pravděpodobností 100 %. Peněženky hlásí sucho.',
+  'Červený svršek: čtyřnásobek bolesti, čtyřnásobek radosti.',
+  'Karty nelžou. Hráči ano.',
+  'Kdo nemá deštník, má aspoň dluh.',
+  'Sedma na sedmu a za chvíli i na nulu.',
+  'Pojištění proti dešti karet bohužel neexistuje.',
+  'Každý bod v ruce je kapka v cizí peněžence.',
+  'Oficiální měna Prsíčka: slzy a drobné.',
+  'Eso stojí. Ty taky – na pokraji bankrotu.',
+];
+const PAY_MSGS = [
+  (l,w,a)=>`${l} platí ${w} ${a}. Peněženka pláče, karty se smějí.`,
+  (l,w,a)=>`Úřad potvrzuje příjem ${a} od ${l}. ${w} si kupuje deštník.`,
+  (l,w,a)=>`${l} zmokl o ${a}. ${w} zůstal suchý jak troud.`,
+  (l,w,a)=>`Zapsáno inkoustem z rozlitého piva: ${l} → ${w}, ${a}.`,
+  (l,w,a)=>`${w} vybírá ${a}. ${l} vybírá výmluvu.`,
+];
+const MULT4_MSGS = [
+  '🔴 ČERVENÝ SVRŠEK! Meteorologové vyhlásili nejvyšší stupeň.',
+  '🔴 Čtyřnásobek! Někde v dálce právě omdlela peněženka.',
+];
+
+/* --- žetony: první dvě písmena přezdívky + barva --- */
+const TOK_COLORS = ['#d62828','#2d9e46','#e85d04','#7b2cbf','#0077b6','#c9184a','#8a5523','#2a9d8f','#f4a261','#3a86ff'];
+function abbr(name){
+  const ch = Array.from(String(name).replace(/\s+/g,''));
+  if(!ch.length) return '?';
+  return ch[0].toLocaleUpperCase('cs') + (ch[1] ? ch[1].toLocaleLowerCase('cs') : '');
+}
+function tokColor(name){
+  let h = 0; for(const c of String(name)) h = (h*31 + c.codePointAt(0)) >>> 0;
+  return TOK_COLORS[h % TOK_COLORS.length];
+}
+function tok(p, size){
+  return `<span class="tok${size?' '+size:''}" style="background:${tokColor(p.name)}" title="${esc(p.name)}">${esc(abbr(p.name))}</span>`;
+}
+
+/* --- stav --- */
+let db = null, online = true, busy = false;
+let ui = {participants:[], winner:null, loser:null, points:null, mult:1, flags:[]};
+ui.participants = (safeJSON(localStorage.getItem(LS_UI))||{}).participants || [];
+let histFilter = null;
+
+function safeJSON(s){ try{return JSON.parse(s)}catch(e){return null} }
+function saveUI(){ try{localStorage.setItem(LS_UI, JSON.stringify({participants:ui.participants}))}catch(e){} }
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const P = id => db.players.find(p=>p.id===id) || {name:'??', id};
+const num = v => (Math.round(v*100)/100).toLocaleString('cs-CZ',{maximumFractionDigits:2});
+const moneyTxt = v => num(v) + ' ' + (db.settings.currency||'Kč');
+const money = v => esc(moneyTxt(v));
+const pv = () => +db.settings.pointValue || 1;
+const fmtDate = ts => new Date(ts*1000).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+/* =========================================================
+   Data – server nebo offline
+   ========================================================= */
+function emptyDb(){ return {players:[],games:[],settlements:[],settings:{pointValue:1,currency:'Kč'},rev:0}; }
+function normalize(d){
+  d = Object.assign(emptyDb(), d||{});
+  d.settings = Object.assign(emptyDb().settings, d.settings||{});
+  return d;
+}
+
+async function load(){
+  try{
+    const r = await fetch(API, {cache:'no-store'});
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    if(!j || !Array.isArray(j.players)) throw 0;
+    db = normalize(j); online = true;
+  }catch(e){
+    online = false;
+    db = normalize(safeJSON(localStorage.getItem(LS_DB)));
+  }
+  $('#offline').style.display = online ? 'none' : 'block';
+  $('#mode').textContent = online ? 'sdíleno přes server' : 'offline';
+  render();
+}
+
+async function op(payload){
+  if(busy) return false;
+  busy = true;
+  try{
+    if(online){
+      const r = await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const j = await r.json().catch(()=>({error:'Server odpověděl nesmyslem'}));
+      if(!r.ok || j.error){ toast('⛈️ ' + (j.error||'Chyba serveru')); return false; }
+      db = normalize(j);
+    }else{
+      const err = applyLocal(payload);
+      if(err){ toast('⛈️ ' + err); return false; }
+      localStorage.setItem(LS_DB, JSON.stringify(db));
+    }
+    render();
+    return true;
+  }catch(e){
+    toast('⛈️ Spojení se serverem se rozmočilo. Zkus to znovu.');
+    return false;
+  }finally{ busy = false; }
+}
+
+// Stejná logika jako api.php – pro offline režim
+function applyLocal(o){
+  const uid = () => Math.random().toString(16).slice(2,14);
+  const has = id => db.players.some(p=>p.id===id);
+  const now = Math.floor(Date.now()/1000);
+  switch(o.action){
+    case 'add_player': {
+      const name = (o.name||'').trim().replace(/\s+/g,' ').slice(0,24);
+      if(!name) return 'Hráč potřebuje jméno';
+      if(db.players.some(p=>p.name.toLowerCase()===name.toLowerCase())) return 'Tenhle hráč už u stolu sedí';
+      db.players.push({id:uid(),name}); break;
+    }
+    case 'remove_player': db.players.forEach(p=>{ if(p.id===o.id) p.hidden=!!o.hidden }); break;
+    case 'add_game': {
+      if(!has(o.winner)||!has(o.loser)) return 'Neznámý vítěz nebo poražený';
+      if(o.winner===o.loser) return 'Nemůžeš vyhrát sám nad sebou';
+      const points = parseInt(o.points,10);
+      if(!(points>=0 && points<=999)) return 'Body v ruce musí být 0–999';
+      const mult = parseInt(o.mult,10);
+      if(![1,2,3,4].includes(mult)) return 'Násobek může být jen ×1–×4';
+      const parts=[...new Set([...(o.participants||[]).filter(has),o.winner,o.loser])];
+      db.games.push({id:uid(),ts:now,participants:parts,winner:o.winner,loser:o.loser,
+        points,mult,pointValue:pv(),stake:Math.round(points*mult*pv()*100)/100,
+        flags:o.flags||[],note:(o.note||'').slice(0,120)}); break;
+    }
+    case 'delete_game': db.games = db.games.filter(g=>g.id!==o.id); break;
+    case 'settle':
+      if(!has(o.from)||!has(o.to)||o.from===o.to||!(o.amount>0)) return 'Neplatné vyrovnání';
+      db.settlements.push({id:uid(),ts:now,from:o.from,to:o.to,amount:+o.amount}); break;
+    case 'delete_settlement': db.settlements = db.settlements.filter(s=>s.id!==o.id); break;
+    case 'settings':
+      if(!(+o.pointValue>0)) return 'Cena bodu musí být větší než 0';
+      db.settings.pointValue = Math.round(+o.pointValue*100)/100;
+      if(o.currency) db.settings.currency = String(o.currency).slice(0,8); break;
+    default: return 'Neznámá akce';
+  }
+  db.rev = (db.rev||0)+1;
+}
+
+/* =========================================================
+   Výpočty
+   ========================================================= */
+function balances(){
+  const b = {}; db.players.forEach(p=>b[p.id]=0);
+  db.games.forEach(g=>{ b[g.winner]=(b[g.winner]||0)+g.stake; b[g.loser]=(b[g.loser]||0)-g.stake; });
+  // vyrovnání: dlužník (from) zaplatil věřiteli (to)
+  db.settlements.forEach(s=>{ b[s.from]=(b[s.from]||0)+s.amount; b[s.to]=(b[s.to]||0)-s.amount; });
+  return b;
+}
+// párové dluhy mezi vítězi a poraženými
+function pairDebts(){
+  const m = {};
+  const add=(debtor,creditor,amt)=>{
+    const [x,y] = debtor<creditor ? [debtor,creditor] : [creditor,debtor];
+    const k = x+'|'+y; m[k]=(m[k]||0) + (debtor===x ? amt : -amt);
+  };
+  db.games.forEach(g=>add(g.loser,g.winner,g.stake));
+  db.settlements.forEach(s=>add(s.from,s.to,-s.amount));
+  const out=[];
+  for(const k in m){
+    const v=Math.round(m[k]*100)/100; if(Math.abs(v)<0.005) continue;
+    const [x,y]=k.split('|');
+    out.push(v>0 ? {debtor:x,creditor:y,amt:v} : {debtor:y,creditor:x,amt:-v});
+  }
+  return out.sort((a,b)=>b.amt-a.amt);
+}
+
+/* =========================================================
+   Vykreslení
+   ========================================================= */
+function render(){
+  if(!db) return;
+  renderKolo(); renderBilance(); renderHistorie(); renderHraci();
+}
+const visiblePlayers = () => db.players.filter(p=>!p.hidden);
+function chip(cls, on, content, attrs=''){
+  return `<button type="button" class="chip ${cls}${on?' on':''}" ${attrs}>${content}</button>`;
+}
+const nameChip = (p, on, attrs) => chip('', on, `${tok(p,'s')}${esc(p.name)}`, attrs);
+
+function renderKolo(){
+  const vp = visiblePlayers();
+  ui.participants = ui.participants.filter(id=>vp.some(p=>p.id===id));
+
+  $('#pick-part').innerHTML = !vp.length
+    ? `<div class="empty"><span class="em">🪑</span>U stolu nikdo nesedí. Přidej hráče v záložce <b>Hráči</b>.</div>`
+    : vp.map(p=>nameChip(p, ui.participants.includes(p.id), `data-part="${p.id}"`)).join('')
+      + chip('plain', false, '✨ Všichni', 'data-all="1"');
+
+  const parts = vp.filter(p=>ui.participants.includes(p.id));
+  if(!parts.some(p=>p.id===ui.winner)) ui.winner=null;
+  if(!parts.some(p=>p.id===ui.loser)) ui.loser=null;
+
+  const hint = '<span style="opacity:.6;font-weight:800">Nejdřív posaď ke stolu aspoň dva hráče ☝️</span>';
+  const seats = (role, badge) => parts.length<2 ? hint : parts.map(p=>{
+    const on = ui[role]===p.id, other = role==='winner' ? ui.loser : ui.winner;
+    return `<button type="button" class="seat${on?' on':''}" data-${role==='winner'?'win':'lose'}="${p.id}" data-badge="${badge}" ${other===p.id?'disabled':''} aria-label="${esc(p.name)}">${tok(p)}</button>`;
+  }).join('');
+  $('#pick-win').innerHTML = seats('winner','🏆');
+  $('#pick-lose').innerHTML = seats('loser','💧');
+
+  if(document.activeElement!==$('#pts')) $('#pts').value = ui.points===null ? '' : ui.points;
+  $('#pts-range').value = Math.min(ui.points||0, +$('#pts-range').max);
+
+  $('#pick-mult').innerHTML = MULTS.map(x=>
+    `<button type="button" class="mult${ui.mult===x.m?' on':''}" data-mult="${x.m}"><b>×${x.m}</b>${x.t}</button>`).join('');
+
+  $('#pick-flags').innerHTML = FLAGS.map(f=>chip('flag plain',ui.flags.includes(f.id),
+      `<span class="em">${f.i}</span>${f.t}`,`data-flag="${f.id}"`)).join('');
+
+  const ok = ui.winner && ui.loser && ui.winner!==ui.loser && ui.points!==null;
+  $('#save').disabled = !ok;
+  if(ok){
+    const total = ui.points * ui.mult;
+    const pay = total * pv();
+    $('#preview').innerHTML = `
+      <div class="who">${tok(P(ui.loser),'l')} <span>💸➡️</span> ${tok(P(ui.winner),'l')}</div>
+      <div style="margin-top:6px">${esc(P(ui.loser).name)} platí ${esc(P(ui.winner).name)}</div>
+      <div class="calc">${ui.points} b × ${ui.mult} = ${total} b${pv()!==1?` × ${money(pv())}`:''}</div>
+      <div class="sum">${money(pay)}</div>`;
+  }else{
+    const miss = !ui.winner ? 'kdo zavřel' : !ui.loser ? 'kdo zůstal s kartami' : 'kolik bodů měl v ruce';
+    $('#preview').innerHTML = `🤷 Ještě chybí: <u>${miss}</u>. Pak teprve zaprší peníze.`;
+  }
+}
+
+function title(rank, n, v){
+  if(rank===0 && v>0) return '👑 Dešťový baron';
+  if(rank===n-1 && v<0) return '☔ Promoklý do nitě';
+  if(v>0) return '🌤️ Suchý a spokojený';
+  if(v<0) return '🌧️ Mírně mokne';
+  return '🌫️ Mlha, nic se neděje';
+}
+
+function renderBilance(){
+  const b = balances();
+  const list = db.players.filter(p=>!p.hidden || Math.abs(b[p.id])>0.004)
+    .map(p=>({p,v:b[p.id]||0})).sort((a,c)=>c.v-a.v);
+  $('#rank').innerHTML = list.length ? list.map((x,i)=>`
+    <div class="row">
+      ${tok(x.p)}
+      <div><div class="nm">${esc(x.p.name)}</div><div class="tt">${title(i,list.length,x.v)}</div></div>
+      <div class="val ${x.v>0?'pos':x.v<0?'neg':'zero'}">${x.v>0?'+':''}${money(x.v)}</div>
+    </div>`).join('')
+    : `<div class="empty"><span class="em">🏜️</span>Zatím sucho. Žádní hráči, žádné peníze.</div>`;
+
+  const d = pairDebts();
+  $('#debts').innerHTML = d.length ? d.map(x=>`
+    <div class="row debt">
+      ${tok(P(x.debtor),'s')}<b>${esc(P(x.debtor).name)}</b>
+      <span class="arrow">💸</span>
+      ${tok(P(x.creditor),'s')}<b>${esc(P(x.creditor).name)}</b>
+      <span class="val neg" style="font-size:22px">${money(x.amt)}</span>
+      <button class="btn small ok" data-settle="${x.debtor}|${x.creditor}|${x.amt}">🤝 Vyrovnáno</button>
+    </div>`).join('')
+    : `<div class="empty"><span class="em">🌈</span>Nikdo nikomu nic nedluží. Duha nad stolem.</div>`;
+
+  const g = db.games, cnt = {}, wins={}, losses={}, plays={}, pts={};
+  g.forEach(x=>{
+    wins[x.winner]=(wins[x.winner]||0)+1; losses[x.loser]=(losses[x.loser]||0)+1;
+    pts[x.loser]=(pts[x.loser]||0)+(x.points||0);
+    x.participants.forEach(id=>plays[id]=(plays[id]||0)+1);
+    (x.flags||[]).forEach(f=>cnt[f]=(cnt[f]||0)+1);
+  });
+  const top = o => { let k=null,v=0; for(const i in o) if(o[i]>v){v=o[i];k=i} return k?{k,v}:null; };
+  const tw=top(wins), tl=top(losses), tf=top(cnt), tpt=top(pts);
+  const pot = g.reduce((s,x)=>s+x.stake,0);
+  const biggest = g.reduce((m,x)=>!m||x.stake>m.stake?x:m,null);
+  const x4 = g.filter(x=>x.mult===4);
+  const x4w = {}; x4.forEach(x=>x4w[x.winner]=(x4w[x.winner]||0)+1); const tx4 = top(x4w);
+  const rate = Object.keys(plays).map(id=>({id,r:(wins[id]||0)/plays[id],n:plays[id]})).filter(x=>x.n>=3).sort((a,c)=>c.r-a.r)[0];
+  const nm = k => `${esc(P(k).name)}`;
+  $('#stats').innerHTML = [
+    ['🃏', g.length, 'odehraných kol'],
+    ['💰', money(pot), 'proteklo stolem'],
+    ['🏆', tw?nm(tw.k):'—', tw?`nejvíc výher (${tw.v})`:'nejvíc výher'],
+    ['💧', tl?nm(tl.k):'—', tl?`nejvíc proher (${tl.v})`:'nejvíc proher'],
+    ['🔴', tx4?nm(tx4.k):'—', tx4?`král ×4 zavření (${tx4.v}×)`:'král ×4 zavření'],
+    ['🎒', tpt?nm(tpt.k):'—', tpt?`nejvíc bodů v ruce (${tpt.v} b)`:'nejvíc bodů v ruce'],
+    ['🎯', rate?`${nm(rate.id)} ${Math.round(rate.r*100)} %`:'—', 'úspěšnost (min. 3 kola)'],
+    ['🌊', biggest?money(biggest.stake):'—', biggest?`největší liják (${biggest.points??'?'} b × ${biggest.mult??1})`:'největší liják v jednom kole'],
+    ['🏷️', tf?`${flagById(tf.k).i} ${tf.v}×`:'—', tf?flagById(tf.k).t:'nejčastější příznak'],
+  ].map(([i,b,s])=>`<div class="stat"><span>${i} ${s}</span><b>${b}</b></div>`).join('');
+}
+
+function renderHistorie(){
+  const players = db.players.filter(p=>db.games.some(g=>g.participants.includes(p.id)));
+  $('#hist-filter').innerHTML = players.length ? chip('plain',!histFilter,'🌍 Všichni','data-hf=""') +
+    players.map(p=>nameChip(p, histFilter===p.id, `data-hf="${p.id}"`)).join('') : '';
+
+  const items = [
+    ...db.games.map(g=>({t:'g',ts:g.ts,x:g})),
+    ...db.settlements.map(s=>({t:'s',ts:s.ts,x:s})),
+  ].filter(it=>{
+    if(!histFilter) return true;
+    return it.t==='g' ? it.x.participants.includes(histFilter) : (it.x.from===histFilter||it.x.to===histFilter);
+  }).sort((a,b)=>b.ts-a.ts);
+
+  if(!items.length){
+    $('#hist').innerHTML = `<div class="empty"><span class="em">📭</span>Kronika je prázdná. Ještě nepršelo.</div>`;
+    return;
+  }
+  const numById = {}; [...db.games].sort((a,b)=>a.ts-b.ts).forEach((g,i)=>numById[g.id]=i+1);
+  $('#hist').innerHTML = items.slice(0,300).map(it=>{
+    if(it.t==='s'){
+      const s=it.x;
+      return `<div class="hg settle">
+        <div class="top"><span>🤝 Vyrovnání</span><span>${fmtDate(s.ts)}</span></div>
+        <div class="main">${tok(P(s.from),'s')} ${esc(P(s.from).name)} zaplatil ${tok(P(s.to),'s')} ${esc(P(s.to).name)}
+          <span class="amt" style="color:#15803d">${money(s.amount)}</span></div>
+        <div style="text-align:right"><button class="btn small danger" data-dels="${s.id}">🗑️</button></div>
+      </div>`;
+    }
+    const g=it.x;
+    const others = g.participants.filter(id=>id!==g.winner&&id!==g.loser);
+    const calc = g.points!=null ? `${g.points} b × ${g.mult||1}` : '';
+    return `<div class="hg">
+      <div class="top"><span>Kolo č. ${numById[g.id]}</span><span>${fmtDate(g.ts)}</span></div>
+      <div class="main">
+        ${card(rnd(SUIT_KEYS), rnd(VAL_POOL), true)}
+        <span>🏆 ${tok(P(g.winner),'s')} ${esc(P(g.winner).name)}</span>
+        <span style="opacity:.5">vs</span>
+        <span>💧 ${tok(P(g.loser),'s')} ${esc(P(g.loser).name)}</span>
+        <span class="amt">${money(g.stake)}${calc?`<small>${calc}</small>`:''}</span>
+      </div>
+      ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
+      ${(g.mult>1 || (g.flags||[]).length)?`<div class="fl">
+        ${g.mult>1?`<span class="tag m">✖️${g.mult} ${MULTS[g.mult-1].t}</span>`:''}
+        ${(g.flags||[]).map(f=>`<span class="tag">${flagById(f).i} ${esc(flagById(f).t)}</span>`).join('')}</div>`:''}
+      ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
+      <div style="text-align:right;margin-top:6px"><button class="btn small danger" data-delg="${g.id}">🗑️ Smazat</button></div>
+    </div>`;
+  }).join('');
+}
+
+function renderHraci(){
+  if(document.activeElement!==$('#set-pv')) $('#set-pv').value = db.settings.pointValue;
+  if(document.activeElement!==$('#set-cur')) $('#set-cur').value = db.settings.currency||'Kč';
+  $('#players').innerHTML = db.players.length ? db.players.map(p=>{
+    const games = db.games.filter(g=>g.participants.includes(p.id)).length;
+    return `<div class="row" style="${p.hidden?'opacity:.5':''}">
+      ${tok(p)}
+      <div><div class="nm">${esc(p.name)}</div><div class="tt">${games} kol · ${p.hidden?'poslán domů 🏠':'u stolu 🪑'}</div></div>
+      <div style="margin-left:auto">${p.hidden
+        ? `<button class="btn small ok" data-hide="${p.id}|0">Vrátit ke stolu</button>`
+        : `<button class="btn small" data-hide="${p.id}|1">Poslat domů</button>`}</div>
+    </div>`;}).join('')
+    : `<div class="empty"><span class="em">👻</span>Zatím tu straší jen prázdné židle.</div>`;
+}
+
+/* =========================================================
+   Efekty
+   ========================================================= */
+function rain(n=26){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const box = document.createElement('div'); box.className='rain';
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='drop';
+    d.innerHTML = Math.random()<.75 ? card(rnd(SUIT_KEYS), rnd(VAL_POOL), Math.random()<.5) : `<div style="font-size:30px">${rnd(['💧','💸','🪙','☔'])}</div>`;
+    d.style.left = (Math.random()*100)+'vw';
+    d.style.setProperty('--r', (Math.random()*720-360)+'deg');
+    d.style.animationDuration = (1.6+Math.random()*1.8)+'s';
+    d.style.animationDelay = (Math.random()*.8)+'s';
+    box.appendChild(d);
+  }
+  document.body.appendChild(box);
+  setTimeout(()=>box.remove(), 4500);
+}
+let toastT;
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+  document.body.appendChild(t); clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),3800);
+}
+function ticker(){ $('#ticker').textContent = '📡 ' + rnd(QUOTES); }
+
+/* =========================================================
+   Události
+   ========================================================= */
+function setPoints(v){
+  if(v===null || isNaN(v)){ ui.points=null; }
+  else ui.points = Math.max(0, Math.min(999, Math.round(v)));
+  renderKolo();
+}
+
+document.addEventListener('click', async e=>{
+  const t = e.target.closest('button'); if(!t) return;
+  const d = t.dataset;
+
+  if(d.v){
+    document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b===t));
+    document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+d.v));
+    window.scrollTo({top:0,behavior:'smooth'}); return;
+  }
+  if(d.all){
+    const vp=visiblePlayers().map(p=>p.id);
+    ui.participants = ui.participants.length===vp.length ? [] : vp;
+    saveUI(); renderKolo(); return;
+  }
+  if(d.part){
+    ui.participants = ui.participants.includes(d.part) ? ui.participants.filter(x=>x!==d.part) : [...ui.participants,d.part];
+    saveUI(); renderKolo(); return;
+  }
+  if(d.win){ ui.winner = ui.winner===d.win?null:d.win; renderKolo(); return; }
+  if(d.lose){ ui.loser = ui.loser===d.lose?null:d.lose; renderKolo(); return; }
+  if(d.mult){ ui.mult = +d.mult; if(ui.mult===4) toast(rnd(MULT4_MSGS)); renderKolo(); return; }
+  if(d.flag){
+    ui.flags = ui.flags.includes(d.flag) ? ui.flags.filter(x=>x!==d.flag) : [...ui.flags,d.flag];
+    renderKolo(); return;
+  }
+  if(d.pt){ setPoints((ui.points||0) + (+d.pt)); return; }
+
+  if(t.id==='save'){
+    const w=P(ui.winner), l=P(ui.loser), amt=moneyTxt(ui.points*ui.mult*pv());
+    const ok = await op({action:'add_game',participants:ui.participants,winner:ui.winner,loser:ui.loser,
+      points:ui.points,mult:ui.mult,flags:ui.flags,note:$('#note').value});
+    if(ok){
+      rain(ui.mult===4 ? 50 : 26);
+      toast('💸 ' + rnd(PAY_MSGS)(l.name, w.name, amt));
+      ui.winner=null; ui.loser=null; ui.points=null; ui.mult=1; ui.flags=[]; $('#note').value='';
+      renderKolo(); ticker();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+    return;
+  }
+
+  if(d.settle){
+    const [from,to,amt]=d.settle.split('|');
+    const v = prompt(`Kolik ${P(from).name} zaplatil ${P(to).name}?`, amt);
+    if(v===null) return;
+    const n = parseFloat(String(v).replace(',','.'));
+    if(!(n>0)){ toast('🤨 To není částka, to je výmluva.'); return; }
+    if(await op({action:'settle',from,to,amount:n})) toast('🤝 Vyrovnáno. Nad stolem vysvitlo sluníčko.');
+    return;
+  }
+  if(d.delg){
+    if(!confirm('Opravdu smazat tohle kolo? Déšť se odprší zpátky do mraku.')) return;
+    if(await op({action:'delete_game',id:d.delg})) toast('🗑️ Kolo vymazáno z kroniky.');
+    return;
+  }
+  if(d.dels){
+    if(!confirm('Smazat toto vyrovnání?')) return;
+    if(await op({action:'delete_settlement',id:d.dels})) toast('🗑️ Vyrovnání zrušeno. Dluh je zpět.');
+    return;
+  }
+  if(d.hf!==undefined){ histFilter = d.hf || null; renderHistorie(); return; }
+  if(d.hide){ const [id,h]=d.hide.split('|'); await op({action:'remove_player',id,hidden:h==='1'}); return; }
+  if(t.id==='add-player'){ addPlayer(); return; }
+  if(t.id==='save-set'){
+    if(await op({action:'settings',pointValue:parseFloat($('#set-pv').value.replace(',','.')),currency:$('#set-cur').value})){
+      renderKolo(); toast('⚙️ Uloženo. Úřad děkuje za spolupráci.');
+    }
+    return;
+  }
+  if(t.id==='export'){
+    const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='prsicko-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000); return;
+  }
+});
+
+async function addPlayer(){
+  const name=$('#new-name').value.trim().replace(/\s+/g,' ');
+  if(!name){ toast('🤔 Hráč bez přezdívky je jen duch.'); return; }
+  const clash = db.players.find(p=>abbr(p.name)===abbr(name));
+  if(clash && !confirm(`Zkratku „${abbr(name)}“ už u stolu má ${clash.name}. Budou se plést. Přesto přidat?`)) return;
+  if(await op({action:'add_player',name})){
+    const added = db.players.find(p=>p.name===name);
+    if(added && !ui.participants.includes(added.id)){ ui.participants.push(added.id); saveUI(); renderKolo(); }
+    $('#new-name').value=''; updNewTok();
+    toast(`🪑 ${name} si přisedl ke stolu jako „${abbr(name)}“.`);
+  }
+}
+function updNewTok(){
+  const n = $('#new-name').value.trim(), t = $('#new-tok');
+  t.textContent = n ? abbr(n) : '?';
+  t.style.background = n ? tokColor(n.replace(/\s+/g,' ')) : '#bbb';
+}
+$('#new-name').addEventListener('input', updNewTok);
+$('#new-name').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+$('#pts').addEventListener('input',e=>{
+  const v = e.target.value.trim();
+  ui.points = v==='' ? null : Math.max(0, Math.min(999, parseInt(v,10)||0));
+  renderKolo();
+});
+$('#pts-range').addEventListener('input',e=>setPoints(+e.target.value));
+$('#logo').addEventListener('click',()=>{ rain(18); ticker(); });
+
+/* --- vějíř karet v hlavičce --- */
+$('#fan').innerHTML = card('srdce','A') + card('zelene','VII') + card('srdce','Sv') + card('kule','K');
+
+/* --- start + pravidelné obnovování ze serveru --- */
+ticker(); setInterval(ticker, 9000);
+load();
+setInterval(async ()=>{
+  if(!online || busy || document.hidden) return;
+  try{
+    const r=await fetch(API,{cache:'no-store'}); const j=await r.json();
+    if(j && j.rev!==db.rev){ db=normalize(j); render(); }
+  }catch(e){}
+}, 15000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && online) load(); });
+</script>
+</body>
+</html>
