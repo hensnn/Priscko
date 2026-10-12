@@ -302,6 +302,25 @@ table.daytbl{border-collapse:separate;border-spacing:0;width:100%;font-weight:80
 .daytbl tr.live td:first-child::after{content:" ●";color:var(--leaf)}
 .daytbl tfoot td{border-top:3px solid var(--ink);border-bottom:0;font-family:var(--display);font-weight:400;font-size:18px;background:#fff3c4}
 .daytbl tfoot tr+tr td{font-family:"Nunito";font-weight:900;font-size:13px;background:#fff}
+/* úpravy */
+.hg.editing{background:#fffbe6;outline:3px dashed var(--mustard);outline-offset:-8px;transform:none!important}
+.hg.editing .pick{margin-top:8px}
+.hg.editing .chips .tok{cursor:pointer}
+.ech{border:0;background:none;padding:0;cursor:pointer;opacity:.35}
+.ech.on{opacity:1}
+.erow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.e-pts{width:84px;flex:none;font-family:var(--display);font-size:30px;text-align:center;border:3px solid var(--ink);border-radius:12px;padding:2px;background:#fff}
+.emults{flex:1;grid-template-columns:repeat(auto-fit,minmax(54px,1fr));gap:5px}
+.emults .mult{padding:3px 2px;font-size:8px}
+.emults .mult b{font-size:20px}
+.ecalc{margin:8px 0;font-weight:900;text-align:right}
+.ecalc b{font-family:var(--display);font-weight:400;font-size:28px;color:var(--red)}
+.edited{font-size:11px;font-weight:800;opacity:.5}
+.datebox{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.datebox input{border:3px solid var(--ink);border-radius:10px;padding:6px;font-weight:900;background:#fff}
+.iconbtn{border:0;background:none;cursor:pointer;font-size:15px;padding:0 4px}
+.name-in{width:100%;max-width:190px;border:3px solid var(--ink);border-radius:10px;padding:4px 8px;font-weight:900;font-size:16px;background:#fff}
+body:not(.ro) .ro-name{display:none}
 .daytbl tbody tr{cursor:pointer}
 .daytbl tbody tr:active td{filter:brightness(.92)}
 .daytbl tbody tr.sel td{box-shadow:inset 0 3px 0 var(--mustard),inset 0 -3px 0 var(--mustard)}
@@ -848,6 +867,37 @@ function applyLocal(o){
         points,mult,multLabel:mm.t,pointValue:pv(),base:c.base,stake:c.stake,note:(o.note||'').slice(0,120)}); break;
     }
     case 'delete_game': db.games = db.games.filter(g=>g.id!==o.id); break;
+    case 'set_session_date': {
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(o.date||'')) return 'Neplatné datum';
+      const ss = db.sessions.find(x=>x.id===o.id); if(!ss) return 'Herní den nenalezen';
+      ss.date = o.date; break;
+    }
+    case 'update_game': {
+      const g = db.games.find(x=>x.id===o.id); if(!g) return 'Hra nenalezena';
+      if(!has(o.winner)||!has(o.loser)) return 'Neznámý vítěz nebo poražený';
+      if(o.winner===o.loser) return 'Vítěz a poražený nemůže být tentýž hráč';
+      const points = parseInt(o.points,10); if(!(points>=0 && points<=999)) return 'Body v ruce musí být 0–999';
+      let mm = mults().find(x=>Math.abs(+x.m - +o.mult)<0.0001);
+      if(!mm){ if(Math.abs(+g.mult - +o.mult)<0.0001) mm = {m:+g.mult, t:g.multLabel||''}; else return 'Takový násobek v Nastavení není'; }
+      const coef = g.pointValue ?? pv(), c = calc(points, +mm.m, coef);
+      Object.assign(g, {winner:o.winner, loser:o.loser,
+        participants:[...new Set([...(o.participants||g.participants).filter(has), o.winner, o.loser])],
+        points, mult:+mm.m, multLabel:mm.t, pointValue:coef, base:c.base, stake:c.stake,
+        note:String(o.note??g.note??'').slice(0,120), editedTs:now});
+      break;
+    }
+    case 'rename_player': {
+      const name = (o.name||'').trim().replace(/\s+/g,' ').slice(0,24); if(!name) return 'Hráč potřebuje jméno';
+      if(db.players.some(p=>p.id!==o.id && p.name.toLowerCase()===name.toLowerCase())) return 'Tuhle přezdívku už má jiný hráč';
+      const pl = db.players.find(p=>p.id===o.id); if(!pl) return 'Hráč nenalezen';
+      if(!pl.abbr) pl.abbr = abbr(pl.name);
+      pl.name = name; break;
+    }
+    case 'update_settlement': {
+      const amt = Math.round(+o.amount); if(!(amt>0)) return 'Částka musí být větší než 0';
+      const st = db.settlements.find(x=>x.id===o.id); if(!st) return 'Vyrovnání nenalezeno';
+      st.amount = amt; break;
+    }
     case 'settle':
       if(!has(o.from)||!has(o.to)||o.from===o.to||!(o.amount>0)) return 'Neplatné vyrovnání';
       db.settlements.push({id:uid(),ts:now,from:o.from,to:o.to,amount:Math.round(+o.amount)}); break;
@@ -939,6 +989,14 @@ function chip(cls, on, content, attrs=''){
 const nameChip = (p, on, attrs) => chip('', on, `${tok(p,'s')}${esc(p.name)}`, attrs);
 const signed = v => `<span class="${v>0?'pos':v<0?'neg':'zero'}">${v>0?'+':''}${money(v)}</span>`;
 
+function dateEditHtml(day){
+  if(day.virtual) return '';
+  if(dateEditId===day.id) return `<div class="datebox edit-only">
+      <input type="date" class="e-date" value="${day.date}">
+      <button class="btn small ok" data-sdate="${day.id}">💾 Uložit datum</button>
+      <button class="btn small" data-dedit="">Zrušit</button></div>`;
+  return `<button class="btn small edit-only" data-dedit="${day.id}">📅 Změnit datum</button>`;
+}
 function dayHead(day, extra=''){
   const d = parseIso(day.date);
   const wd = d.toLocaleDateString('cs-CZ',{weekday:'long'});
@@ -978,7 +1036,32 @@ function debtsHtml(list, withSettle){
     </div>`).join('')}</div>`;
 }
 
+function gameEditorHtml(g, n){
+  const cand = db.players.filter(p=>!p.hidden || g.participants.includes(p.id) || p.id===g.winner || p.id===g.loser);
+  const ms = [...mults()]; if(!ms.some(x=>+x.m===+g.mult)) ms.push({m:+g.mult, t:g.multLabel||''});
+  const c = calc(edit.points ?? 0, edit.mult, g.pointValue ?? pv());
+  const seatRow = (key, sel, other, badge) => cand.map(p=>
+    `<button type="button" class="seat${sel===p.id?' on':''}" data-${key}="${p.id}" data-badge="${badge}" ${other===p.id?'disabled':''}>${tok(p)}</button>`).join('');
+  return `<div class="hg editing">
+    <div class="top"><span>✏️ Úprava hry č. ${n}</span><span>${fmtTime(g.ts)}</span></div>
+    <div class="pick"><span class="plbl">🏆 Zavřel</span><div class="seats sm">${seatRow('ewin', edit.winner, edit.loser, '🏆')}</div></div>
+    <div class="pick"><span class="plbl">💧 Zůstal</span><div class="seats sm">${seatRow('elose', edit.loser, edit.winner, '💧')}</div></div>
+    <div class="pick"><span class="plbl">🪑 U stolu</span><div class="chips" style="gap:6px">${cand.map(p=>
+      `<button type="button" class="ech${edit.participants.includes(p.id)||p.id===edit.winner||p.id===edit.loser?' on':''}" data-epart="${p.id}">${tok(p,'s')}</button>`).join('')}</div></div>
+    <div class="erow">
+      <input class="e-pts" type="number" inputmode="numeric" min="0" max="999" value="${edit.points ?? ''}" aria-label="Body v ruce">
+      <div class="mults emults">${ms.map(x=>`<button type="button" class="mult${+edit.mult===+x.m?' on':''}" data-emult="${x.m}"><b>×${numC(+x.m)}</b>${esc(x.t)}</button>`).join('')}</div>
+    </div>
+    <input class="txt e-note" maxlength="120" value="${esc(edit.note||'')}" placeholder="✍️ Poznámka" style="margin-top:8px">
+    <div class="ecalc"><span class="ecalc-t">${edit.points ?? 0} b × ${numC(g.pointValue ?? pv())} ≈ ${c.base} · × ${numC(edit.mult)} =</span> <b>${money(c.stake)}</b></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn small" data-ecancel="1">Zrušit</button>
+      <button class="btn small ok" data-esave="${g.id}">💾 Uložit změny</button>
+    </div>
+  </div>`;
+}
 function gameHtml(g, n){
+  if(edit && edit.id===g.id) return gameEditorHtml(g, n);
   const others = g.participants.filter(id=>id!==g.winner&&id!==g.loser);
   const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b → ${g.base} × ${numC(+g.mult||1)}` : `${g.points} b × ${numC(+g.mult||1)}`) : '';
   return `<div class="hg">
@@ -993,7 +1076,13 @@ function gameHtml(g, n){
     ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
     ${+g.mult!==1?`<div class="fl"><span class="tag m">✖️${numC(+g.mult)} ${esc(g.multLabel||multLabel(g.mult))}</span></div>`:''}
     ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
-    <div style="text-align:right;margin-top:6px"><button class="btn small danger edit-only" data-delg="${g.id}">🗑️ Smazat</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px">
+      <span class="edited">${g.editedTs?'✏️ upraveno '+fmtTime(g.editedTs):''}</span>
+      <span class="edit-only" style="display:flex;gap:6px">
+        <button class="btn small" data-edg="${g.id}">✏️ Upravit</button>
+        <button class="btn small danger" data-delg="${g.id}">🗑️ Smazat</button>
+      </span>
+    </div>
   </div>`;
 }
 function gamesList(games){
@@ -1018,7 +1107,10 @@ function renderDen(){
   if(open){
     const day = {...open, games:gamesOf(open.id)};
     const d = parseIso(open.date);
-    $('#dayline').innerHTML = `<span>📅 ${esc(d.toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'numeric'}))}</span>
+    const fe = document.activeElement;
+    if(!(dateEditId===open.id && $('#dayline').contains(fe) && fe.tagName==='INPUT'))   // nepřekreslovat jen při psaní
+    $('#dayline').innerHTML = dateEditId===open.id ? dateEditHtml(day) : `<span>📅 ${esc(d.toLocaleDateString('cs-CZ',{weekday:'long',day:'numeric',month:'numeric'}))}</span>
+      <button class="iconbtn edit-only" data-dedit="${open.id}" title="Změnit datum">✏️</button>
       <span>· hra č. ${day.games.length+1}</span><span class="pill live">● hraje se</span>`;
     $('#day-games').innerHTML = day.games.length ? gamesList(day.games)
       : `<div class="empty"><span class="em">🌂</span>Zatím ani kapka. ${canEdit()?'Zapiš první hru nahoře.':'Čeká se na první hru.'}</div>`;
@@ -1206,7 +1298,9 @@ function renderBilance(){
       <div class="top"><span>🤝 Vyrovnání</span><span>${new Date(s.ts*1000).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}</span></div>
       <div class="main">${tok(P(s.from),'s')} ${esc(P(s.from).name)} zaplatil ${tok(P(s.to),'s')} ${esc(P(s.to).name)}
         <span class="amt" style="color:#15803d">${money(s.amount)}</span></div>
-      <div style="text-align:right"><button class="btn small danger edit-only" data-dels="${s.id}">🗑️</button></div>
+      <div class="edit-only" style="display:flex;gap:6px;justify-content:flex-end">
+        <button class="btn small" data-edits="${s.id}">✏️ Částka</button>
+        <button class="btn small danger" data-dels="${s.id}">🗑️</button></div>
     </div>`).join('')
     : `<div class="empty" style="padding:8px">Zatím nikdo nic nesplatil. Typické.</div>`;
 
@@ -1241,6 +1335,8 @@ function renderBilance(){
 
 // podrobnosti vybraného dne pod tabulkou v Bilanci (náhrada za Kroniku)
 let openDayId = null;
+let edit = null;          // rozpracovaná úprava hry {id, winner, loser, participants, points, mult, note}
+let dateEditId = null;    // u kterého herního dne se právě mění datum
 function renderDayDetail(){
   const box = $('#daydetail'); if(!box) return;
   const days = allDays().filter(d=>d.games.length);
@@ -1256,6 +1352,7 @@ function renderDayDetail(){
         <button class="btn small" data-day="">✖ Zavřít</button>
       </div>
       ${dayHead(d)}
+      ${dateEditHtml(d)}
       <h3 style="font-size:18px;margin:10px 0 6px">💸 ${d.closedTs?'Vyrovnání dne':'Zatím za dnešek'}</h3>
       ${debtsHtml(pairDebts(d.games), false)}
       <h3 style="font-size:18px;margin:14px 0 6px">🃏 Hry (${d.games.length})</h3>
@@ -1265,12 +1362,14 @@ function renderDayDetail(){
 }
 
 function renderHraci(){
-  if(document.activeElement && document.activeElement.classList.contains('abbr-in')) return;   // právě se píše zkratka
+  if(document.activeElement && (document.activeElement.classList.contains('abbr-in') || document.activeElement.classList.contains('name-in'))) return;   // právě se píše
   $('#players').innerHTML = db.players.length ? db.players.map(p=>{
     const games = db.games.filter(g=>g.participants.includes(p.id)).length;
     return `<div class="row" style="${p.hidden?'opacity:.5':''}">
       ${tok(p)}
-      <div><div class="nm">${esc(p.name)}</div><div class="tt">${games} her · ${p.hidden?'poslán domů 🏠':'u stolu 🪑'}</div></div>
+      <div><div class="nm ro-name">${esc(p.name)}</div>
+        <input class="name-in edit-only" data-rename="${p.id}" value="${esc(p.name)}" maxlength="24" aria-label="Přezdívka">
+        <div class="tt">${games} her · ${p.hidden?'poslán domů 🏠':'u stolu 🪑'}</div></div>
       <input class="abbr-in edit-only" data-abbr="${p.id}" value="${esc(abbrOf(p))}" maxlength="3" aria-label="Zkratka u stolu" title="Zkratka u stolu – přepiš a potvrď">
       <div style="margin-left:auto">${p.hidden
         ? `<button class="btn small ok edit-only" data-hide="${p.id}|0">Vrátit ke stolu</button>`
@@ -1331,6 +1430,50 @@ document.addEventListener('click', async e=>{
 
   if(d.v){ showView(d.v); return; }
   if(d.day!==undefined){ openDayId = d.day || null; renderDayDetail(); return; }
+
+  // úprava hry
+  if(d.edg){
+    const g = db.games.find(x=>x.id===d.edg); if(!g) return;
+    edit = {id:g.id, winner:g.winner, loser:g.loser, participants:[...g.participants], points:g.points, mult:+(g.mult??1), note:g.note||''};
+    render(); return;
+  }
+  if(edit && (d.ewin||d.elose||d.epart||d.emult)){
+    if(d.ewin) edit.winner = d.ewin;
+    if(d.elose) edit.loser = d.elose;
+    if(d.epart){
+      if(d.epart===edit.winner||d.epart===edit.loser){ toast('🪑 Vítěz a poražený u stolu sedí vždy.'); return; }
+      edit.participants = edit.participants.includes(d.epart) ? edit.participants.filter(x=>x!==d.epart) : [...edit.participants, d.epart];
+    }
+    if(d.emult) edit.mult = +d.emult;
+    render(); return;
+  }
+  if(d.ecancel){ edit = null; render(); return; }
+  if(d.esave){
+    if(edit.points===null || isNaN(edit.points)){ toast('🤔 Doplň body v ruce.'); return; }
+    if(await op({action:'update_game', id:edit.id, winner:edit.winner, loser:edit.loser, participants:edit.participants,
+                 points:edit.points, mult:edit.mult, note:edit.note})){
+      edit = null; render(); toast('✏️ Hra opravena. Kronikáři přepisují dějiny.');
+    }
+    return;
+  }
+
+  // datum herního dne
+  if(d.dedit!==undefined){ dateEditId = d.dedit || null; render(); return; }
+  if(d.sdate){
+    const box = t.closest('.datebox'), v = box && box.querySelector('.e-date').value;
+    if(await op({action:'set_session_date', id:d.sdate, date:v})){ dateEditId = null; render(); toast('📅 Datum změněno.'); }
+    return;
+  }
+
+  // částka vyrovnání
+  if(d.edits){
+    const st = db.settlements.find(x=>x.id===d.edits); if(!st) return;
+    const v = prompt(`Kolik ${P(st.from).name} skutečně zaplatil ${P(st.to).name}?`, st.amount); if(v===null) return;
+    const n = Math.round(parseFloat(String(v).replace(',','.')));
+    if(!(n>0)){ toast('🤨 To není částka, to je výmluva.'); return; }
+    if(await op({action:'update_settlement', id:d.edits, amount:n})) toast('✏️ Vyrovnání opraveno.');
+    return;
+  }
   if(t.id==='lock' || t.id==='pw-lock'){
     if(canEdit()) lockNow();
     else { showView('nastaveni'); setTimeout(()=>{ const i=$('#pw-in')||$('#pw-new'); if(i) i.focus(); }, 300); }
@@ -1481,6 +1624,15 @@ $('#new-abbr').addEventListener('input', e=>{ abbrTouched = e.target.value.trim(
 $('#new-abbr').addEventListener('keydown', e=>{ if(e.key==='Enter') addPlayer(); });
 // přepsání zkratky hráče: potvrdí se Enterem nebo opuštěním pole
 document.addEventListener('change', async e=>{
+  const rid = e.target.dataset && e.target.dataset.rename;
+  if(rid){
+    const name = e.target.value.trim().replace(/\s+/g,' '), oldName = P(rid).name;
+    if(!name || name===oldName){ e.target.value = oldName; return; }
+    e.target.blur();
+    if(await op({action:'rename_player', id:rid, name})) toast(`✏️ ${oldName} se teď jmenuje ${name}.`);
+    else renderHraci();
+    return;
+  }
   const id = e.target.dataset && e.target.dataset.abbr; if(!id) return;
   const ab = cleanAbbr(e.target.value), pl = P(id);
   if(!ab || ab===abbrOf(pl)){ e.target.value = abbrOf(pl); return; }
@@ -1488,8 +1640,16 @@ document.addEventListener('change', async e=>{
   if(await op({action:'set_abbr', id, abbr:ab})) toast(`✏️ ${pl.name} je u stolu teď „${ab}“.`);
   else renderHraci();
 });
-document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset && e.target.dataset.abbr) e.target.blur(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset && (e.target.dataset.abbr || e.target.dataset.rename)) e.target.blur(); });
 document.addEventListener('input', e=>{
+  if(edit && e.target.classList.contains('e-note')) edit.note = e.target.value;
+  if(edit && e.target.classList.contains('e-pts')){
+    const v = e.target.value.trim(); edit.points = v==='' ? null : Math.max(0, Math.min(999, parseInt(v,10)||0));
+    const g = db.games.find(x=>x.id===edit.id), c = calc(edit.points??0, edit.mult, g.pointValue ?? pv());
+    const box = e.target.closest('.hg');
+    box.querySelector('.ecalc-t').textContent = `${edit.points??0} b × ${numC(g.pointValue ?? pv())} ≈ ${c.base} · × ${numC(edit.mult)} =`;
+    box.querySelector('.ecalc b').textContent = moneyTxt(c.stake);
+  }
   if(e.target.closest && e.target.closest('#mult-edit')) multDraft = readMultDraft();
   if(e.target.id==='set-pv' || e.target.id==='set-cur') payDirty = true;
   if(e.target.closest && (e.target.closest('#mult-edit') || e.target.id==='set-pv' || e.target.id==='set-cur')){
@@ -1519,7 +1679,7 @@ pass = ls.get(LS_PASS) || '';
 ticker(); setInterval(ticker, 9000);
 load();
 setInterval(async ()=>{
-  if(!online || busy || document.hidden) return;
+  if(!online || busy || document.hidden || edit || dateEditId) return;
   if(document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
   try{
     const r=await fetch(API,{cache:'no-store'}); const j=await r.json();

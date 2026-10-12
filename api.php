@@ -254,6 +254,79 @@ switch ($in['action']) {
         ];
         break;
 
+    // --- úpravy už zapsaných věcí ---
+    case 'set_session_date':
+        $date = (string)($in['date'] ?? '');
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || !strtotime($date)) fail(400, 'Neplatné datum');
+        $found = false;
+        foreach ($db['sessions'] as &$s) if ($s['id'] === ($in['id'] ?? '')) { $s['date'] = $date; $found = true; }
+        unset($s);
+        if (!$found) fail(400, 'Herní den nenalezen');
+        break;
+
+    case 'update_game':
+        $gi = null;
+        foreach ($db['games'] as $i => $g) if ($g['id'] === ($in['id'] ?? '')) { $gi = $i; break; }
+        if ($gi === null) fail(400, 'Hra nenalezena');
+        $g = $db['games'][$gi];
+        $w = $in['winner'] ?? $g['winner']; $l = $in['loser'] ?? $g['loser'];
+        if (!$hasPlayer($w) || !$hasPlayer($l)) fail(400, 'Neznámý vítěz nebo poražený');
+        if ($w === $l) fail(400, 'Vítěz a poražený nemůže být tentýž hráč');
+        $points = (int)($in['points'] ?? $g['points'] ?? -1);
+        if ($points < 0 || $points > 999) fail(400, 'Body v ruce musí být 0–999');
+        // násobek: některý z Nastavení, nebo ten původní (i kdyby už v Nastavení nebyl)
+        $mult = (float)($in['mult'] ?? $g['mult'] ?? 1);
+        $multLabel = null;
+        foreach ((array)$db['settings']['mults'] as $mm) {
+            if (abs((float)$mm['m'] - $mult) < 0.0001) { $mult = (float)$mm['m']; $multLabel = $mm['t']; break; }
+        }
+        if ($multLabel === null) {
+            if (abs((float)($g['mult'] ?? 1) - $mult) < 0.0001) $multLabel = $g['multLabel'] ?? '';
+            else fail(400, 'Takový násobek v Nastavení není');
+        }
+        if ($mult == (int)$mult) $mult = (int)$mult;
+        // přepočet s koeficientem, se kterým se hra hrála
+        $pv = (float)($g['pointValue'] ?? $db['settings']['pointValue']);
+        $base  = (int)round($points * $pv + 1e-9);
+        $stake = (int)round($base * $mult + 1e-9);
+        $parts = isset($in['participants'])
+            ? array_values(array_unique(array_filter((array)$in['participants'], $hasPlayer)))
+            : $g['participants'];
+        if (!in_array($w, $parts, true)) $parts[] = $w;
+        if (!in_array($l, $parts, true)) $parts[] = $l;
+        $db['games'][$gi] = array_merge($g, [
+            'winner' => $w, 'loser' => $l, 'participants' => $parts,
+            'points' => $points, 'mult' => $mult, 'multLabel' => $multLabel,
+            'pointValue' => $pv, 'base' => $base, 'stake' => $stake,
+            'note' => array_key_exists('note', $in) ? clean_str($in['note'], 120) : ($g['note'] ?? ''),
+            'editedTs' => time(),
+        ]);
+        break;
+
+    case 'rename_player':
+        $name = clean_str($in['name'] ?? '', 24);
+        if ($name === '') fail(400, 'Hráč potřebuje jméno');
+        foreach ($db['players'] as $p) {
+            if ($p['id'] !== ($in['id'] ?? '') && mb_strtolower($p['name']) === mb_strtolower($name)) fail(400, 'Tuhle přezdívku už má jiný hráč');
+        }
+        $found = false;
+        foreach ($db['players'] as &$p) if ($p['id'] === ($in['id'] ?? '')) {
+            if (empty($p['abbr'])) $p['abbr'] = base_abbr($p['name']);   // zkratka zůstane, jak byla
+            $p['name'] = $name; $found = true;
+        }
+        unset($p);
+        if (!$found) fail(400, 'Hráč nenalezen');
+        break;
+
+    case 'update_settlement':
+        $amt = (int)round((float)($in['amount'] ?? 0));
+        if ($amt <= 0) fail(400, 'Částka musí být větší než 0');
+        $found = false;
+        foreach ($db['settlements'] as &$st) if ($st['id'] === ($in['id'] ?? '')) { $st['amount'] = $amt; $found = true; }
+        unset($st);
+        if (!$found) fail(400, 'Vyrovnání nenalezeno');
+        break;
+
     case 'delete_game':
         $db['games'] = array_values(array_filter($db['games'], function ($g) use ($in) { return $g['id'] !== ($in['id'] ?? ''); }));
         break;

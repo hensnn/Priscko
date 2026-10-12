@@ -25,6 +25,16 @@ Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádá
 - **Heslo nastav hned po nasazení** – dokud není nastavené, může ho zvolit kdokoli, kdo stránku otevře první.
 
 
+## Úpravy (s heslem)
+
+Upravit jde všechno, co se zapsalo:
+
+- **hra** – ✏️ Upravit u hry (v herním dni i v podrobnostech dne v Bilanci): vítěz, poražený, kdo seděl u stolu, body, násobek, poznámka. Částka se přepočítá s koeficientem, se kterým se hra hrála; hra dostane značku „upraveno“.
+- **datum herního dne** – ✏️ v hlavičce běžícího dne, nebo 📅 Změnit datum v podrobnostech dne v Bilanci
+- **hráč** – přezdívka i zkratka přímo v jeho řádku v záložce Hráči (zkratka se při přejmenování nemění)
+- **zaplacené vyrovnání** – ✏️ Částka v Bilanci
+- **koeficient, měna, násobky, heslo** – záložka Nastavení
+
 ## Herní den
 
 1. Na začátku večera **Začít herní den**
