@@ -29,12 +29,13 @@ body{
 }
 button,input,select{font:inherit;color:inherit}
 .wrap{max-width:720px;margin:0 auto;padding:0 14px}
+header.wrap{padding-top:34px}
 
 /* ---------- HLAVIČKA ---------- */
-header{position:relative;padding:18px 0 6px;text-align:center}
+header{position:relative;padding:30px 0 6px;text-align:center;overflow-x:clip}
 .cloud{font-size:42px;display:inline-block;animation:bob 3s ease-in-out infinite}
 .logo-img{
-  display:block;width:min(230px,60vw);height:auto;margin:0 auto 4px;border-radius:50%;cursor:pointer;
+  display:block;width:min(210px,50vw);height:auto;margin:0 auto 4px;border-radius:50%;cursor:pointer;
   filter:drop-shadow(6px 6px 0 var(--ink));animation:bob 3s ease-in-out infinite
 }
 .logo-img:active{transform:scale(.95) rotate(-4deg)}
@@ -56,18 +57,26 @@ h1{
 }
 h1:active{transform:rotate(4deg) scale(.96)}
 .stamp{
-  display:inline-block; margin-top:10px; padding:4px 10px; border:3px solid var(--red);
+  display:inline-block; margin-top:6px; padding:4px 10px; border:3px solid var(--red);
   color:var(--red); background:var(--paper); font-weight:900; font-size:12px; letter-spacing:1px;
   text-transform:uppercase; transform:rotate(3deg); border-radius:6px; box-shadow:var(--shadow);
 }
-.fan{display:flex;justify-content:center;margin:14px 0 4px;height:92px}
-.fan .mcard{margin:0 -14px;transform-origin:50% 120%;transition:transform .2s}
-.fan .mcard:nth-child(1){transform:rotate(-24deg)}
-.fan .mcard:nth-child(2){transform:rotate(-8deg) translateY(-6px)}
-.fan .mcard:nth-child(3){transform:rotate(8deg) translateY(-6px)}
-.fan .mcard:nth-child(4){transform:rotate(24deg)}
-.fan:hover .mcard:nth-child(1){transform:rotate(-34deg)}
-.fan:hover .mcard:nth-child(4){transform:rotate(34deg)}
+/* hlavička: nápis nahoře přes logo, karty po stranách */
+.hero{position:relative;display:flex;justify-content:center;align-items:center;padding-top:clamp(28px,7.5vw,50px)}
+.hero .titlewrap{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;white-space:nowrap}
+.hero .logo-img{position:relative;z-index:2;margin:0}
+.side{display:flex;align-items:center;z-index:1;margin-top:30px}
+.side .mcard{transition:transform .2s;transform-origin:50% 100%}
+.side.left{margin-right:-22px}
+.side.right{margin-left:-22px}
+.side.left .mcard:nth-child(1){transform:rotate(-26deg) translateY(10px)}
+.side.left .mcard:nth-child(2){transform:rotate(-10deg);margin-left:-30px}
+.side.right .mcard:nth-child(1){transform:rotate(10deg)}
+.side.right .mcard:nth-child(2){transform:rotate(26deg) translateY(10px);margin-left:-30px}
+.hero:hover .side.left .mcard:nth-child(1){transform:rotate(-36deg) translateY(10px)}
+.hero:hover .side.right .mcard:nth-child(2){transform:rotate(36deg) translateY(10px)}
+@media (max-width:440px){ .side .mcard{width:50px;height:74px} .side .mcard svg{width:25px;height:25px} .side .mcard .cv{font-size:13px} }
+@media (max-width:370px){ .side .mcard{width:44px;height:66px} .side .mcard svg{width:22px;height:22px} }
 .ticker{
   margin:8px auto 0; max-width:520px; background:var(--ink); color:var(--mustard);
   border-radius:999px; padding:6px 14px; font-weight:700; font-size:13px;
@@ -451,11 +460,14 @@ body.ro .lockbtn{background:#fff}
 <body>
 
 <header class="wrap">
-  <!-- logo -->
-  <img class="logo-img" id="logo-img" src="img/logo.webp" width="512" height="512" alt="Prsíčko – logo" title="Klikni, ať zaprší">
-  <div class="titlewrap"><h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1><span class="ver" aria-label="verze 2.0">2.0</span></div>
+  <!-- nápis nahoře přes logo, karty po stranách -->
+  <div class="hero">
+    <div class="titlewrap"><h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1><span class="ver" aria-label="verze 2.0">2.0</span></div>
+    <div class="side left" id="fan-l" aria-hidden="true"></div>
+    <img class="logo-img" id="logo-img" src="img/logo.webp" width="512" height="512" alt="Prsíčko – logo" title="Klikni, ať zaprší">
+    <div class="side right" id="fan-r" aria-hidden="true"></div>
+  </div>
   <div class="stamp">☔ Úřad pro evidenci deště karet · prší, nebo platíš</div>
-  <div class="fan" id="fan" aria-hidden="true"></div>
   <div class="ticker" id="ticker">Načítám předpověď…</div>
   <button class="lockbtn" id="lock"></button>
   <div class="offline" id="offline">🔌 Offline režim – server neodpověděl, data se ukládají jen v tomhle prohlížeči.</div>
@@ -1709,7 +1721,8 @@ $('#logo').addEventListener('click',()=>{ rain(18); ticker(); });
 $('#logo-img').addEventListener('click',()=>{ rain(18); ticker(); });
 
 /* --- vějíř karet v hlavičce --- */
-$('#fan').innerHTML = card('srdce','A') + card('zelene','VII') + card('srdce','Sv') + card('kule','K');
+$('#fan-l').innerHTML = card('srdce','A') + card('zelene','VII');
+$('#fan-r').innerHTML = card('srdce','Sv') + card('kule','K');
 
 /* --- start + pravidelné obnovování ze serveru --- */
 pass = ls.get(LS_PASS) || '';
