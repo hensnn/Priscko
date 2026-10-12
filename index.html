@@ -388,6 +388,10 @@ body.ro .lockbtn{background:#fff}
       <h2>🪑 Kdo dnes hraje</h2>
       <p class="sub">Tihle se nahoře nabízejí jako vítěz a poražený. Když nevybereš nikoho, nabízejí se všichni.</p>
       <div class="chips" id="pick-part"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <input class="txt" id="quick-name" maxlength="24" placeholder="Nový hráč – přezdívka">
+        <button class="btn ok" id="quick-add" style="white-space:nowrap">➕ Přisednout</button>
+      </div>
       <button class="btn danger wide" id="close-day">🏁 Ukončit herní den a spočítat žebříček</button>
     </div>
   </section>
@@ -1269,6 +1273,7 @@ document.addEventListener('click', async e=>{
   }
   if(d.hide){ const [id,h]=d.hide.split('|'); await op({action:'remove_player',id,hidden:h==='1'}); return; }
   if(t.id==='add-player'){ addPlayer(); return; }
+  if(t.id==='quick-add'){ addPlayer('#quick-name'); return; }
   if(t.id==='save-set'){
     const list = readMultDraft().map(x=>({m:parseFloat(String(x.m).replace(',','.')), t:x.t}));
     if(await op({action:'settings', pointValue:parseFloat($('#set-pv').value.replace(',','.')), currency:$('#set-cur').value, mults:list})){
@@ -1285,15 +1290,16 @@ document.addEventListener('click', async e=>{
   }
 });
 
-async function addPlayer(){
-  const name=$('#new-name').value.trim().replace(/\s+/g,' ');
+async function addPlayer(inputSel='#new-name'){
+  const name=$(inputSel).value.trim().replace(/\s+/g,' ');
   if(!name){ toast('🤔 Hráč bez přezdívky je jen duch.'); return; }
   const clash = db.players.find(p=>abbr(p.name)===abbr(name));
   if(clash && !confirm(`Zkratku „${abbr(name)}“ už u stolu má ${clash.name}. Budou se plést. Přesto přidat?`)) return;
   if(await op({action:'add_player',name})){
     const added = db.players.find(p=>p.name===name);
-    if(added && !ui.participants.includes(added.id)){ ui.participants.push(added.id); saveUI(); render(); }
-    $('#new-name').value=''; updNewTok();
+    // prázdný výběr = u stolu všichni → nový hráč je tam automaticky, výběr neměnit
+    if(added && ui.participants.length && !ui.participants.includes(added.id)){ ui.participants.push(added.id); saveUI(); render(); }
+    $(inputSel).value=''; updNewTok();
     toast(`🪑 ${name} si přisedl ke stolu jako „${abbr(name)}“.`);
   }
 }
@@ -1316,6 +1322,7 @@ document.addEventListener('keydown', e=>{
   if(e.target.id==='pw-new2') setPassword($('#pw-new').value, e.target.value);
 });
 $('#new-name').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
+$('#quick-name').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer('#quick-name'); });
 $('#pts').addEventListener('input',e=>{
   const v = e.target.value.trim();
   ui.points = v==='' ? null : Math.max(0, Math.min(999, parseInt(v,10)||0));
