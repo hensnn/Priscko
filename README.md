@@ -1,100 +1,156 @@
-# Prsíčko ☔
+# ☔ Prsíčko
 
-Sčítání her v prší. Po každém kole platí poražený (zůstal s kartami) vítězi (zavřel):
+Absurdně deštivé počítadlo karetního **prší** mezi kamarády, stavěné hlavně pro mobil.
+*Úřad pro evidenci deště karet – prší, nebo platíš.*
+
+<p align="center"><img src="docs/nahled.png" alt="Náhled Prsíčka: herní den, zápis hry, výsledky dnů a dluhy" width="100%"></p>
+
+- 🃏 **Herní den:** večer otevřeš den a zapisuješ hru za hrou. Formulář další hry je hned nahoře.
+- 🎚️ **Rychlý zápis:** kdo zavřel, kdo zůstal s kartami, posuvník s body a násobek hned vedle. Velká částka se počítá živě.
+- 💰 **Platba:** body v ruce poraženého × koeficient, zaokrouhlit, × násobek zavření. Vždy celé koruny.
+- 👑 **Žebříček dne:** po ukončení dne král a utopenec večera a vyrovnání toho dne.
+- 📅 **Bilance:** tabulka výsledků po dnech, celkový žebříček, kdo komu dluží a statistiky.
+- 🤝 **Vyrovnání:** dluhy mezi dvojicí se vzájemně odečtou, zaplacené se jedním ťuknutím odškrtnou.
+- 🎯 **Žetony u stolu:** hráč má celou přezdívku, u stolu jen krátkou zkratku – vždy jedinečnou.
+- ✏️ **Opravy:** upravit jde úplně všechno – hry, data dnů, hráče, vyrovnání, násobky.
+- 👥 **Sdílené pro všechny:** data leží na serveru, každý vidí totéž a stránka se sama obnovuje.
+- 🔒 **Heslo pro zápis:** prohlížet může kdokoli, zapisovat jen ten, kdo zná heslo.
+
+👉 **Vyzkoušet:** [hensnn.github.io/Priscko](https://hensnn.github.io/Priscko/) *(bez serveru – data jen ve tvém prohlížeči)*
+
+---
+
+## 🧮 Jak se počítá
+
+### 💸 Platba za hru
+
+Platí jen **poražený** (zůstal s kartami) **vítězi** (zavřel). Ostatní u stolu jen přihlížejí a moknou.
 
 ```
-platba = zaokrouhlit(body v ruce poraženého × koeficient) × násobek zavření
+platba = zaokrouhlit(body v ruce × koeficient) × násobek zavření
 ```
 
-- **Body v ruce** – posuvník nebo pole (0–999)
-- **Násobek** – výchozí ×1, ×2, ×3, ×4 (např. zavření červeným svrškem = ×4); dají se měnit, přidávat i mazat v záložce **Nastavení** (i desetinné, např. ×1,5)
-- **Koeficient platby** – v Nastavení, výchozí 0,1. Platba je vždy v **celých korunách** (0,5 nahoru): body × koeficient se zaokrouhlí, a pokud je násobek desetinný, zaokrouhlí se i výsledek. S koeficientem 1 se nic nezaokrouhluje (67 b × 2 = 134).
+| Koeficient | Hra | Výpočet | Platí |
+|:---:|---|---|---:|
+| 0,1 | 67 b, ×2 | 6,7 → 7 × 2 | **14 Kč** |
+| 0,1 | 64 b, ×2 | 6,4 → 6 × 2 | **12 Kč** |
+| 0,1 | 65 b, ×1 | 6,5 → 7 | **7 Kč** |
+| 0,1 | 23 b, ×4 *(červený svršek)* | 2,3 → 2 × 4 | **8 Kč** |
+| 1 | 67 b, ×2 | 67 × 2 | **134 Kč** |
 
-Příklad s koeficientem 0,1: 67 b → 6,7 → **7** × 2 = **14** · 64 b → 6,4 → **6** × 2 = **12**
+- Zaokrouhluje se na **celé koruny**, 0,5 nahoru. Je-li násobek desetinný (např. ×1,5), zaokrouhlí se i výsledek.
+- Koeficient (výchozí 0,1), měnu a násobky (výchozí ×1 obyčejně, ×2, ×3, ×4 červeným svrškem) nastavíš v **⚙️ Nastavení**. Násobky jde přidávat, přepisovat i mazat.
+- Změna koeficientu platí jen pro nové hry. Už zapsané hry si pamatují koeficient, se kterým se hrály.
 
-Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádává se pouze vítěz s poraženým.
+### 🃏 Herní den
 
-## Heslo pro úpravy
+1. Na začátku večera **🌧️ Začít herní den** (datum jde zvolit i zpětně).
+2. Zapisuješ hry. Pod formulářem jsou hry dne a **průběžný žebříček**.
+3. Úplně dole **🪑 Kdo dnes hraje** (kdo se nabízí u zápisu; když nevybereš nikoho, nabízejí se všichni) a rychlé **➕ Přisednout** pro nového hráče.
+4. **🏁 Ukončit herní den** – spočítá se žebříček dne (👑 král večera, ☔ utopenec večera) a vyrovnání dne.
 
-- Bez hesla je aplikace **jen pro čtení** – každý vidí hry naživo, žebříčky a bilanci.
-- Heslo má vlastní kolonku v záložce **Nastavení** (tlačítko 🔒 v hlavičce tam přímo přepne):
-  - poprvé (heslo ještě není) – rovnou si heslo zvolíš,
-  - potom – zadáš heslo a telefon si ho zapamatuje,
-  - když je odemčeno, je tam i zamknutí a změna hesla.
-- Na serveru je uložené jen jako otisk v `data/auth.json` a ven se nikdy neposílá. Každý zápis server znovu ověří.
-- **Heslo nastav hned po nasazení** – dokud není nastavené, může ho zvolit kdokoli, kdo stránku otevře první.
+Poslední ukončený den jde znovu otevřít a dopsat hry (Bilance → ťukni na den → ↩️ Znovu otevřít den).
 
+### 🤝 Vyrovnání
 
-## Úpravy (s heslem)
+**Dluhy se počítají po dvojicích a vzájemně se odečtou:**
 
-Upravit jde všechno, co se zapsalo:
-
-- **hra** – ✏️ Upravit u hry (v herním dni i v podrobnostech dne v Bilanci): vítěz, poražený, kdo seděl u stolu, body, násobek, poznámka. Částka se přepočítá s koeficientem, se kterým se hra hrála; hra dostane značku „upraveno“.
-- **datum herního dne** – ✏️ v hlavičce běžícího dne, nebo 📅 Změnit datum v podrobnostech dne v Bilanci
-- **hráč** – přezdívka i zkratka přímo v jeho řádku v záložce Hráči (zkratka se při přejmenování nemění)
-- **zaplacené vyrovnání** – ✏️ Částka v Bilanci
-- **koeficient, měna, násobky, heslo** – záložka Nastavení
-
-## Herní den
-
-1. Na začátku večera **Začít herní den**
-2. Nahoře je rovnou formulář **Další hra**, pod ním hry dne a průběžný žebříček, úplně dole **Kdo dnes hraje** a ukončení dne
-3. Na konci **Ukončit herní den** – spočítá se žebříček dne (král / utopenec večera) a vyrovnání dne: dluhy mezi dvojicemi se vzájemně odečtou (A dluží B 92, B dluží A 40 → A dluží B 52)
-4. Záložka **Bilance**: nahoře tabulka **Výsledky herních dnů** (dny × hráči, vítěz dne zeleně s 👑, nejhorší červeně, dole součet a počet vyhraných dnů; **ťuknutím na den** se pod tabulkou rozbalí jeho hry, vyrovnání dne a případně „Znovu otevřít den“), pod ní **Celkový žebříček**, pak **Kdo komu dluží** (označení jako vyrovnané) a statistiky
-
-
-> Na GitHub Pages (bez PHP) běží aplikace v offline režimu – data se ukládají jen v prohlížeči. Pro sdílení mezi telefony je potřeba server s PHP (níže).
-
-Hráči se zadávají celou přezdívkou, u stolu se zobrazují jako žeton se zkratkou. Zkratka je **vždy jedinečná**:
-
-- výchozí jsou první dvě písmena (Pepík → **Pe**)
-- když už je obsazená, vezme se další písmeno jména (Petr → **Pt**, Pepa → **Pp**), u dvou slov iniciály (Petr Novák → **Pn**), jinak číslo (**P2**)
-- při přidávání hráče je vedle přezdívky kolonka **Zkratka** – vyplní se sama, ale jde přepsat; u existujících hráčů jde zkratka přepsat v jejich řádku (1–3 znaky); obsazenou zkratku aplikace nepovolí
-
-## Soubory
-
-| Soubor | Co dělá |
+| Hra | Dluh |
 |---|---|
-| `index.html` | celá aplikace (vzhled + logika) |
-| `api.php` | čte a zapisuje databázi |
-| `data/prsicko.json` | databáze – vytvoří se sama při prvním zápisu |
-| `data/prsicko.bak.json` | automatická záloha předchozí verze |
+| Kuba prohrál s Frantou | Kuba → Franta 14 Kč |
+| Franta prohrál s Kubou | Franta → Kuba 12 Kč |
+| **Po započtení** | **Kuba → Franta 2 Kč** |
 
-Když `api.php` neběží (např. otevřeš `index.html` jen jako soubor), aplikace přepne do **offline režimu** a ukládá do prohlížeče.
+- Nic se nepřevádí přes třetího hráče – každá dvojice se vyrovnává zvlášť.
+- **Vyrovnání dne** (v herním dni a v podrobnostech dne) je přehled, kdo komu dluží za ten večer.
+- **Bilance → Kdo komu dluží** je stav za **všechny dny dohromady** mínus to, co už se zaplatilo.
+- **🤝 Vyrovnáno** zapíše platbu – celou částku nebo jen část. Omylem zapsanou platbu jde opravit nebo smazat.
+- Placení **nemění žebříček** – pořadí se počítá jen z odehraných her.
 
-## Nasazení na Caddy LXC (krok za krokem)
+### 🎯 Zkratky hráčů
 
-**1. Nainstaluj PHP** (v konzoli Caddy kontejneru):
+Hráč má celou přezdívku, u stolu se ukazuje žetonem se zkratkou. Zkratka je **vždy jedinečná**:
+
+| Přidaný hráč | Zkratka | Proč |
+|---|:---:|---|
+| Pepík | **Pe** | první dvě písmena |
+| Petr | **Pt** | „Pe“ je obsazené → další písmeno |
+| Pepa | **Pp** | „Pe“ je obsazené → další písmeno |
+| Petr Novák | **Pn** | iniciály |
+
+Při přidávání se zkratka vyplní sama a jde ji přepsat. Obsazenou zkratku aplikace nepovolí.
+
+### ✏️ Opravy
+
+S heslem jde upravit všechno, co se zapsalo:
+
+| Co | Kde |
+|---|---|
+| hra – vítěz, poražený, kdo seděl u stolu, body, násobek, poznámka | **✏️ Upravit** u hry |
+| datum herního dne | ✏️ v hlavičce dne nebo **📅 Změnit datum** v Bilanci |
+| přezdívka a zkratka hráče | v řádku hráče v záložce **Hráči** |
+| částka zaplaceného vyrovnání | **✏️ Částka** v Bilanci |
+| koeficient, měna, násobky, heslo | **⚙️ Nastavení** |
+
+Hráče s historií nejde smazat (rozbila by se bilance) – jde ho **poslat domů**, pak se u stolu nenabízí.
+
+---
+
+## 🚀 Instalace
+
+Stačí jakýkoli webový server s **PHP 7.4+** (Caddy, nginx, Apache, sdílený webhosting…).
+
+### Ručně
+
+1. Nahraj `index.html` a `api.php` do jedné složky na webu.
+2. Vedle nich vytvoř složku `data/` a dej webovému serveru (PHP) právo do ní zapisovat.
+3. Doporučeno: zakaž přímý přístup ke složce `data/` (data se čtou jen přes `api.php`, je tam i otisk hesla).
+4. Otevři stránku → **⚙️ Nastavení** → zvol heslo pro zápis.
+
+> ⚠️ **Heslo nastav hned po instalaci.** Dokud není nastavené, zvolí ho ten, kdo stránku otevře první.
+
+Hotovo. Data se ukládají do `data/prsicko.json`, otisk hesla do `data/auth.json`.
+
+### Automaticky (Debian / Ubuntu + Caddy)
+
+Pro server s Debianem nebo Ubuntu, na kterém už běží Caddy, je připravený skript. Spusť ho jako `root`:
 
 ```bash
-apt update && apt install -y php-fpm
-ls /run/php/
+bash <(curl -fsSL https://raw.githubusercontent.com/hensnn/Priscko/main/install-caddy.sh)
 ```
 
-Poslední příkaz vypíše název socketu, např. `php8.2-fpm.sock` (Debian 12) nebo `php8.4-fpm.sock` (Debian 13). Ten budeš potřebovat v kroku 3.
+Skript nainstaluje PHP, stáhne aplikaci do `/var/www/prsicko` a přidá do `Caddyfile` **vlastní web na portu 8080** (původní `Caddyfile` předtím zazálohuje). Ostatní weby na serveru nechá být – Prsíčko tak může běžet vedle [Šachového Orákula](https://github.com/hensnn/sachove-orakulum).
 
-**2. Nahraj soubory** do `/var/www/html/prsicko/` a povol zápis do složky data:
+Jiný port nebo složka:
 
 ```bash
-mkdir -p /var/www/html/prsicko/data
-# sem nakopíruj index.html a api.php
-chown -R www-data:www-data /var/www/html/prsicko/data
+PRSICKO_PORT=8090 PRSICKO_DIR=/var/www/prsi bash <(curl -fsSL https://raw.githubusercontent.com/hensnn/Priscko/main/install-caddy.sh)
 ```
 
-**3. Uprav Caddyfile** (`/etc/caddy/Caddyfile`) – do bloku webu přidej:
+HTTPS a doménu si vyřeš podle sebe, např. v Nginx Proxy Manageru přidej Proxy Host → `http://<IP serveru>:8080`.
 
-```
-# Prsíčko – PHP pro api.php (číslo verze podle kroku 1)
-php_fastcgi unix//run/php/php8.2-fpm.sock
+**Aktualizace:** spusť stejný příkaz znovu. Data, heslo i `Caddyfile` zůstanou.
 
-# Databázi nepouštět ven napřímo
-@prsidata path /prsicko/data/*
-respond @prsidata 403
-```
+### Bez vlastního serveru (jen na vyzkoušení)
 
-Pak `systemctl reload caddy`.
+Bez PHP (např. na GitHub Pages) běží Prsíčko v **offline režimu**: všechno funguje, ale data i heslo se ukládají jen v prohlížeči, ve kterém ho máš otevřené. Sdílení mezi telefony potřebuje server s PHP.
 
-**4. Otevři** `http://<adresa-serveru>/prsicko/` – dole v patičce musí být „sdíleno přes server“.
+---
 
-Pokud chceš vlastní adresu (např. `prsi.duckdns.org`), přidej v Nginx Proxy Manageru nový Proxy Host stejně jako u šachů a v Caddy na něj nasměruj kořen `/var/www/html/prsicko`.
+## 💾 Záloha
 
+Zkopíruj si `data/prsicko.json`, nebo ve stránce použij **⚙️ Nastavení → Stáhnout databázi**.
+Při každém zápisu se navíc automaticky uloží předchozí verze do `data/prsicko.bak.json`.
+
+Obnova: nahraj zálohu zpět jako `data/prsicko.json`.
+
+---
+
+## 📁 Soubory
+
+| Soubor | K čemu je |
+|---|---|
+| `index.html` | celá aplikace (vzhled a logika) |
+| `api.php` | ukládání dat na serveru, kontrola hesla, výpočty |
+| `install-caddy.sh` | automatická instalace a aktualizace pro Debian + Caddy |
+| `docs/nahled.png` | náhled do tohoto README |
