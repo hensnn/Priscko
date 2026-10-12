@@ -176,14 +176,14 @@ input[type=range]::-moz-range-thumb{
   width:34px;height:34px;border-radius:50%;cursor:pointer;
   background:var(--red);border:3px solid var(--ink);box-shadow:2px 2px 0 var(--ink)
 }
-.mults{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mults{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px}
 .mult{
   border:3px solid var(--ink);background:#fff;border-radius:14px;padding:8px 4px;cursor:pointer;
   box-shadow:3px 3px 0 var(--ink);text-align:center;font-weight:800;font-size:11px;line-height:1.15
 }
 .mult b{display:block;font-family:var(--display);font-size:32px;font-weight:400;letter-spacing:1px}
 .mult.on{background:var(--red);color:#fff}
-.mult:nth-child(4).on{background:linear-gradient(135deg,var(--red),var(--orange))}
+.mult.top.on{background:linear-gradient(135deg,var(--red),var(--orange))}
 .mult:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 
 .btn{
@@ -281,7 +281,7 @@ nav{
   padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:flex;justify-content:center;gap:6px
 }
 nav button{
-  flex:1;max-width:150px;border:0;background:transparent;color:#fff;font-weight:900;font-size:12px;
+  flex:1;max-width:150px;border:0;background:transparent;color:#fff;font-weight:900;font-size:11px;
   padding:6px 4px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px
 }
 nav button .i{font-size:22px;transition:transform .2s}
@@ -299,6 +299,14 @@ body.ro .ro-only{display:block}
   background:#c9f7d3;box-shadow:3px 3px 0 var(--ink)
 }
 body.ro .lockbtn{background:#fff}
+.medit{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.medit .x{font-family:var(--display);font-size:24px;width:18px;text-align:center}
+.medit input{border:3px solid var(--ink);border-radius:10px;padding:8px;background:#fff;font-weight:800;min-width:0}
+.medit input.mv{width:76px;flex:none;text-align:center;font-family:var(--display);font-size:22px;padding:4px}
+.medit input.mt{flex:1}
+.pwrow{display:flex;gap:8px;flex-wrap:wrap}
+.pwrow input{flex:1;min-width:150px}
+.okbox{background:#c9f7d3;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;font-weight:900;margin-bottom:10px}
 .dayline{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px;margin:2px 0 2px;flex-wrap:wrap;opacity:.85}
 .dayline .pill{border-color:var(--ink);color:#fff}
 
@@ -428,21 +436,41 @@ body.ro .lockbtn{background:#fff}
       </div>
       <div class="rank" id="players"></div>
     </div>
+  </section>
+
+  <!-- ===== NASTAVENÍ ===== -->
+  <section class="view" id="v-nastaveni">
     <div class="panel">
-      <h2>⚙️ Nastavení</h2>
-      <label class="lbl">Koeficient platby</label>
+      <div class="tape"></div>
+      <h2>🔑 Heslo pro úpravy</h2>
+      <p class="sub">Bez hesla je Prsíčko jen pro čtení. Telefon si heslo po odemčení zapamatuje.</p>
+      <div id="pw-box"></div>
+    </div>
+
+    <div class="panel">
+      <h2>💰 Platba</h2>
+      <p class="sub">Platba = zaokrouhlit(body × koeficient) × násobek, výsledek vždy v celých korunách.<br>
+        Př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14 · 64 b → 6,4 → 6 × 2 = 12. Změny platí jen pro nové hry.</p>
+
+      <label class="lbl">Koeficient platby a měna</label>
       <p class="ro-only" id="coef-ro" style="font-weight:900;font-size:18px;margin:0"></p>
       <div class="edit-only" style="display:flex;gap:8px">
         <input class="txt" id="set-pv" type="number" inputmode="decimal" min="0.001" step="0.01" style="max-width:140px">
         <input class="txt" id="set-cur" maxlength="8" style="max-width:100px">
-        <button class="btn ok" id="save-set">Uložit</button>
       </div>
-      <p class="sub" style="margin-top:8px">Platba = zaokrouhlit(body × koeficient) × násobek.<br>Př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14 · 64 b → 6,4 → 6 × 2 = 12.<br>Změna platí jen pro nové hry.</p>
+
+      <label class="lbl">✖️ Násobky zavření</label>
+      <div id="mult-ro" class="ro-only"></div>
       <div class="edit-only">
-        <label class="lbl">Heslo pro úpravy</label>
-        <button class="btn" id="change-pass">🔑 Změnit heslo</button>
+        <div id="mult-edit"></div>
+        <button class="btn small" id="mult-add">➕ Přidat násobek</button>
       </div>
-      <label class="lbl">Záloha</label>
+      <button class="btn ok wide edit-only" id="save-set">💾 Uložit platbu a násobky</button>
+    </div>
+
+    <div class="panel">
+      <h2>💾 Záloha</h2>
+      <p class="sub">Celá databáze do souboru – pro jistotu nebo pro přenos.</p>
       <button class="btn" id="export">⬇️ Stáhnout databázi (JSON)</button>
     </div>
   </section>
@@ -455,6 +483,7 @@ body.ro .lockbtn{background:#fff}
   <button data-v="bilance"><span class="i">📒</span>Bilance</button>
   <button data-v="kronika"><span class="i">📜</span>Kronika</button>
   <button data-v="hraci"><span class="i">👥</span>Hráči</button>
+  <button data-v="nastaveni"><span class="i">⚙️</span>Nastavení</button>
 </nav>
 
 <script>
@@ -492,13 +521,19 @@ function card(suit, val, mini){
 }
 const rnd = a => a[Math.floor(Math.random()*a.length)];
 
-/* --- násobky zavření --- */
-const MULTS = [
+/* --- násobky zavření (upravitelné v Nastavení) --- */
+const DEFAULT_MULTS = [
   {m:1, t:'obyčejně'},
   {m:2, t:'dvojitě'},
   {m:3, t:'trojitě'},
   {m:4, t:'červeným svrškem'},
 ];
+const mults = () => (db && Array.isArray(db.settings.mults) && db.settings.mults.length) ? db.settings.mults : DEFAULT_MULTS;
+const maxMult = () => Math.max(...mults().map(x=>+x.m));
+const firstMult = () => mults()[0].m;
+const multLabel = m => (mults().find(x=>+x.m===+m)||{}).t || '';
+let multDraft = null;   // rozepsané změny násobků v Nastavení
+let payDirty = false;   // rozepsaný koeficient / měna – nepřepisovat při překreslení
 
 
 const QUOTES = [
@@ -547,7 +582,7 @@ function tok(p, size){
 /* --- stav --- */
 let db = null, online = true, busy = false;
 let pass = '';
-let ui = {participants:[], winner:null, loser:null, points:null, mult:1};
+let ui = {participants:[], winner:null, loser:null, points:null, mult:null};
 ui.participants = (safeJSON(ls.get(LS_UI))||{}).participants || [];
 
 function safeJSON(s){ try{return JSON.parse(s)}catch(e){return null} }
@@ -559,11 +594,11 @@ const num = v => (Math.round(v*100)/100).toLocaleString('cs-CZ',{maximumFraction
 const moneyTxt = v => num(v) + ' ' + (db.settings.currency||'Kč');
 const money = v => esc(moneyTxt(v));
 const pv = () => (+db.settings.pointValue > 0 ? +db.settings.pointValue : 0.1);
-// platba = zaokrouhlit(body × koeficient) × násobek  (6,5 → 7)
+// platba = zaokrouhlit(body × koeficient) × násobek, výsledek vždy celé koruny  (6,5 → 7)
 function calc(points, mult, coef = pv()){
   const raw = Math.round(points*coef*10000)/10000;
   const base = Math.round(raw + 1e-9);
-  return {raw, base, stake: base*mult};
+  return {raw, base, stake: Math.round(base*mult + 1e-9)};
 }
 const numC = v => v.toLocaleString('cs-CZ',{maximumFractionDigits:4});
 const fmtTime = ts => new Date(ts*1000).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
@@ -575,7 +610,7 @@ const parseIso = s => { const [y,m,d]=s.split('-').map(Number); return new Date(
 /* =========================================================
    Data – server nebo offline
    ========================================================= */
-function emptyDb(){ return {players:[],sessions:[],games:[],settlements:[],settings:{pointValue:0.1,currency:'Kč'},rev:0}; }
+function emptyDb(){ return {players:[],sessions:[],games:[],settlements:[],settings:{pointValue:0.1,currency:'Kč',mults:DEFAULT_MULTS.map(x=>({...x}))},rev:0}; }
 function normalize(d){
   d = Object.assign(emptyDb(), d||{});
   d.settings = Object.assign(emptyDb().settings, d.settings||{});
@@ -606,19 +641,20 @@ function applyLock(){
 }
 function forgetPass(){ pass=''; try{ localStorage.removeItem(LS_PASS) }catch(e){} }
 
-async function unlock(){
-  if(!authInfo().hasPassword){
-    const p1 = prompt('Heslo pro úpravy ještě není nastavené.\nZvol heslo (aspoň 4 znaky):'); if(!p1) return;
-    const p2 = prompt('Zopakuj heslo:'); if(p2===null) return;
-    if(p1!==p2){ toast('🙃 Hesla se neshodují.'); return; }
-    if(await op({action:'set_password', newPassword:p1})){
-      pass=p1; ls.set(LS_PASS,p1); applyLock(); render(); toast('🔑 Heslo nastaveno, úpravy odemčené.');
-    }
-    return;
-  }
-  const p = prompt('Heslo pro úpravy:'); if(!p) return;
+function lockNow(){ forgetPass(); applyLock(); render(); toast('🔒 Zamčeno. Teď jen koukáš.'); }
+async function unlockWith(p){
+  if(!p){ toast('🤔 Napiš heslo.'); return; }
   if(await op({action:'check', password:p})){
-    pass=p; ls.set(LS_PASS,p); applyLock(); render(); toast('🔓 Odemčeno. Můžeš zapisovat.');
+    pass=p; ls.set(LS_PASS,p); applyLock(); render(); toast('🔓 Odemčeno. Můžeš zapisovat.'); return true;
+  }
+}
+async function setPassword(p1, p2){
+  if(!p1 || p1.length<4){ toast('🔑 Heslo musí mít aspoň 4 znaky.'); return; }
+  if(p1!==p2){ toast('🙃 Hesla se neshodují.'); return; }
+  const first = !authInfo().hasPassword;
+  if(await op({action:'set_password', newPassword:p1})){
+    pass=p1; ls.set(LS_PASS,p1); applyLock(); render();
+    toast(first ? '🔑 Heslo nastaveno, úpravy odemčené.' : '🔑 Heslo změněno.');
   }
 }
 
@@ -694,22 +730,36 @@ function applyLocal(o){
       if(o.winner===o.loser) return 'Nemůžeš vyhrát sám nad sebou';
       const points = parseInt(o.points,10);
       if(!(points>=0 && points<=999)) return 'Body v ruce musí být 0–999';
-      const mult = parseInt(o.mult,10);
-      if(![1,2,3,4].includes(mult)) return 'Násobek může být jen ×1–×4';
+      const mm = mults().find(x=>Math.abs(+x.m - +o.mult)<0.0001);
+      if(!mm) return 'Takový násobek v Nastavení není';
+      const mult = +mm.m;
       const parts=[...new Set([...(o.participants||[]).filter(has),o.winner,o.loser])];
       const c = calc(points, mult);
       db.games.push({id:uid(),sessionId:open.id,ts:now,participants:parts,winner:o.winner,loser:o.loser,
-        points,mult,pointValue:pv(),base:c.base,stake:c.stake,note:(o.note||'').slice(0,120)}); break;
+        points,mult,multLabel:mm.t,pointValue:pv(),base:c.base,stake:c.stake,note:(o.note||'').slice(0,120)}); break;
     }
     case 'delete_game': db.games = db.games.filter(g=>g.id!==o.id); break;
     case 'settle':
       if(!has(o.from)||!has(o.to)||o.from===o.to||!(o.amount>0)) return 'Neplatné vyrovnání';
-      db.settlements.push({id:uid(),ts:now,from:o.from,to:o.to,amount:+o.amount}); break;
+      db.settlements.push({id:uid(),ts:now,from:o.from,to:o.to,amount:Math.round(+o.amount)}); break;
     case 'delete_settlement': db.settlements = db.settlements.filter(s=>s.id!==o.id); break;
     case 'settings':
       if(!(+o.pointValue>0)) return 'Koeficient musí být větší než 0';
       db.settings.pointValue = Math.round(+o.pointValue*10000)/10000;
-      if(o.currency) db.settings.currency = String(o.currency).slice(0,8); break;
+      if(o.currency) db.settings.currency = String(o.currency).slice(0,8);
+      if(o.mults){
+        const list=[], seen=new Set();
+        for(const x of o.mults){
+          const m = Math.round(+x.m*100)/100, t = String(x.t||'').trim().slice(0,30);
+          if(!(m>0 && m<=100)) return 'Násobek musí být větší než 0 a nejvýš 100';
+          if(seen.has(m)) return `Násobek ×${m} je tam dvakrát`;
+          seen.add(m); list.push({m,t});
+        }
+        if(!list.length) return 'Aspoň jeden násobek musí zůstat';
+        if(list.length>10) return 'Nejvýš 10 násobků';
+        db.settings.mults = list.sort((a,b)=>a.m-b.m);
+      }
+      break;
     default: return 'Neznámá akce';
   }
   db.rev = (db.rev||0)+1;
@@ -821,7 +871,7 @@ function debtsHtml(list, withSettle){
 
 function gameHtml(g, n){
   const others = g.participants.filter(id=>id!==g.winner&&id!==g.loser);
-  const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b → ${g.base} × ${g.mult||1}` : `${g.points} b × ${g.mult||1}`) : '';
+  const calcTxt = g.points!=null ? (g.base!=null ? `${g.points} b → ${g.base} × ${numC(+g.mult||1)}` : `${g.points} b × ${numC(+g.mult||1)}`) : '';
   return `<div class="hg">
     <div class="top"><span>Hra č. ${n}</span><span>${fmtTime(g.ts)}</span></div>
     <div class="main">
@@ -832,7 +882,7 @@ function gameHtml(g, n){
       <span class="amt">${money(g.stake)}${calcTxt?`<small>${calcTxt}</small>`:''}</span>
     </div>
     ${others.length?`<div class="watchers"><span style="opacity:.6">Přihlíželi a mokli:</span> ${others.map(id=>tok(P(id),'s')).join('')}</div>`:''}
-    ${g.mult>1?`<div class="fl"><span class="tag m">✖️${g.mult} ${MULTS[g.mult-1].t}</span></div>`:''}
+    ${+g.mult!==1?`<div class="fl"><span class="tag m">✖️${numC(+g.mult)} ${esc(g.multLabel||multLabel(g.mult))}</span></div>`:''}
     ${g.note?`<div class="note">„${esc(g.note)}“</div>`:''}
     <div style="text-align:right;margin-top:6px"><button class="btn small danger edit-only" data-delg="${g.id}">🗑️ Smazat</button></div>
   </div>`;
@@ -848,7 +898,7 @@ function gamesList(games){
 function render(){
   if(!db) return;
   applyLock();
-  renderDen(); renderBilance(); renderKronika(); renderHraci();
+  renderDen(); renderBilance(); renderKronika(); renderHraci(); renderNastaveni();
 }
 const visiblePlayers = () => db.players.filter(p=>!p.hidden);
 
@@ -914,8 +964,9 @@ function renderForm(){
   if(document.activeElement!==$('#pts')) $('#pts').value = ui.points===null ? '' : ui.points;
   $('#pts-range').value = Math.min(ui.points||0, +$('#pts-range').max);
 
-  $('#pick-mult').innerHTML = MULTS.map(x=>
-    `<button type="button" class="mult${ui.mult===x.m?' on':''}" data-mult="${x.m}"><b>×${x.m}</b>${x.t}</button>`).join('');
+  if(!mults().some(x=>+x.m===ui.mult)) ui.mult = +firstMult();
+  $('#pick-mult').innerHTML = mults().map(x=>
+    `<button type="button" class="mult${ui.mult===+x.m?' on':''}${+x.m===maxMult()&&maxMult()>1?' top':''}" data-mult="${x.m}"><b>×${numC(+x.m)}</b>${esc(x.t)}</button>`).join('');
 
   const ok = ui.winner && ui.loser && ui.winner!==ui.loser && ui.points!==null;
   $('#save').disabled = !ok;
@@ -924,11 +975,65 @@ function renderForm(){
     $('#preview').innerHTML = `
       <div class="who">${tok(P(ui.loser),'l')} <span>💸➡️</span> ${tok(P(ui.winner),'l')}</div>
       <div style="margin-top:6px">${esc(P(ui.loser).name)} platí ${esc(P(ui.winner).name)}</div>
-      <div class="calc">${ui.points} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${ui.mult}</div>
+      <div class="calc">${ui.points} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${numC(ui.mult)}${c.base*ui.mult!==c.stake?` = ${numC(c.base*ui.mult)} ≈ ${c.stake}`:''}</div>
       <div class="sum">${money(c.stake)}</div>`;
   }else{
     const miss = !ui.winner ? 'kdo zavřel' : !ui.loser ? 'kdo zůstal s kartami' : 'kolik bodů měl v ruce';
     $('#preview').innerHTML = `🤷 Ještě chybí: <u>${miss}</u>. Pak teprve zaprší peníze.`;
+  }
+}
+
+function readMultDraft(){
+  const rows = document.querySelectorAll('#mult-edit .medit');
+  if(!rows.length) return (multDraft || mults()).map(x=>({...x}));
+  return [...rows].map(r=>({m:r.querySelector('.mv').value, t:r.querySelector('.mt').value}));
+}
+function renderNastaveni(){
+  const editing = el => document.activeElement===el;
+  // heslo
+  const box = $('#pw-box');
+  if(!box.contains(document.activeElement)){
+    if(canEdit()){
+      box.innerHTML = `
+        <div class="okbox">✅ Úpravy jsou na tomhle zařízení odemčené.</div>
+        <button class="btn" id="pw-lock">🔒 Zamknout (jen čtení)</button>
+        <label class="lbl">Změnit heslo</label>
+        <div class="pwrow">
+          <input class="txt" id="pw-new" type="password" autocomplete="new-password" placeholder="Nové heslo">
+          <input class="txt" id="pw-new2" type="password" autocomplete="new-password" placeholder="Znovu nové heslo">
+          <button class="btn ok" id="pw-set">Změnit</button>
+        </div>`;
+    }else if(!authInfo().hasPassword){
+      box.innerHTML = `
+        <p style="font-weight:800;margin:0 0 8px">Heslo ještě není nastavené. Zvol ho (aspoň 4 znaky):</p>
+        <div class="pwrow">
+          <input class="txt" id="pw-new" type="password" autocomplete="new-password" placeholder="Heslo">
+          <input class="txt" id="pw-new2" type="password" autocomplete="new-password" placeholder="Znovu heslo">
+          <button class="btn ok" id="pw-set">Nastavit</button>
+        </div>`;
+    }else{
+      box.innerHTML = `
+        <div class="pwrow">
+          <input class="txt" id="pw-in" type="password" autocomplete="current-password" placeholder="Heslo pro úpravy">
+          <button class="btn ok" id="pw-unlock">🔓 Odemknout</button>
+        </div>`;
+    }
+  }
+  // platba
+  if(!payDirty && !editing($('#set-pv'))) $('#set-pv').value = db.settings.pointValue;
+  if(!payDirty && !editing($('#set-cur'))) $('#set-cur').value = db.settings.currency||'Kč';
+  $('#coef-ro').textContent = 'koeficient ' + numC(pv()) + ' · měna ' + (db.settings.currency||'Kč');
+  $('#mult-ro').innerHTML = `<div class="chips">${mults().map(x=>`<span class="chip plain" style="cursor:default"><b>×${numC(+x.m)}</b> ${esc(x.t)}</span>`).join('')}</div>`;
+  const ed = $('#mult-edit');
+  if(!ed.contains(document.activeElement)){
+    const list = multDraft || mults();
+    ed.innerHTML = list.map((x,i)=>`
+      <div class="medit">
+        <span class="x">×</span>
+        <input class="mv" type="text" inputmode="decimal" value="${esc(x.m)}" aria-label="Násobek">
+        <input class="mt" type="text" maxlength="30" value="${esc(x.t)}" placeholder="popis, např. červeným svrškem" aria-label="Popis">
+        <button class="btn sq danger" data-mdel="${i}" title="Odebrat" style="width:42px;height:42px;font-size:18px">🗑️</button>
+      </div>`).join('');
   }
 }
 
@@ -970,7 +1075,8 @@ function renderBilance(){
   const tw=top(wins), tl=top(losses), tpt=top(pts), tk=top(kings);
   const pot = g.reduce((s,x)=>s+x.stake,0);
   const biggest = g.reduce((m,x)=>!m||x.stake>m.stake?x:m,null);
-  const x4w = {}; g.filter(x=>x.mult===4).forEach(x=>x4w[x.winner]=(x4w[x.winner]||0)+1); const tx4 = top(x4w);
+  const mx = maxMult();
+  const x4w = {}; g.filter(x=>+x.mult===mx && mx>1).forEach(x=>x4w[x.winner]=(x4w[x.winner]||0)+1); const tx4 = top(x4w);
   const nm = k => esc(P(k).name);
   $('#stats').innerHTML = [
     ['📅', days.length, 'odehraných dnů'],
@@ -979,9 +1085,9 @@ function renderBilance(){
     ['👑', tk?nm(tk.k):'—', tk?`nejvíc vyhraných večerů (${tk.v})`:'nejvíc vyhraných večerů'],
     ['🏆', tw?nm(tw.k):'—', tw?`nejvíc výher (${tw.v})`:'nejvíc výher'],
     ['💧', tl?nm(tl.k):'—', tl?`nejvíc proher (${tl.v})`:'nejvíc proher'],
-    ['🔴', tx4?nm(tx4.k):'—', tx4?`král ×4 zavření (${tx4.v}×)`:'král ×4 zavření'],
+    ['🔴', tx4?nm(tx4.k):'—', tx4?`král ×${numC(mx)} zavření (${tx4.v}×)`:`král ×${numC(mx)} zavření`],
     ['🎒', tpt?nm(tpt.k):'—', tpt?`nejvíc bodů v ruce (${tpt.v} b)`:'nejvíc bodů v ruce'],
-    ['🌊', biggest?money(biggest.stake):'—', biggest?`největší liják (${biggest.points??'?'} b × ${biggest.mult??1})`:'největší liják v jedné hře'],
+    ['🌊', biggest?money(biggest.stake):'—', biggest?`největší liják (${biggest.points??'?'} b × ${numC(+(biggest.mult??1))})`:'největší liják v jedné hře'],
   ].map(([i,b,s])=>`<div class="stat"><span>${i} ${s}</span><b>${b}</b></div>`).join('');
 }
 
@@ -1005,9 +1111,6 @@ function renderKronika(){
 }
 
 function renderHraci(){
-  if(document.activeElement!==$('#set-pv')) $('#set-pv').value = db.settings.pointValue;
-  $('#coef-ro').textContent = numC(pv()) + ' · měna ' + (db.settings.currency||'Kč');
-  if(document.activeElement!==$('#set-cur')) $('#set-cur').value = db.settings.currency||'Kč';
   $('#players').innerHTML = db.players.length ? db.players.map(p=>{
     const games = db.games.filter(g=>g.participants.includes(p.id)).length;
     return `<div class="row" style="${p.hidden?'opacity:.5':''}">
@@ -1064,13 +1167,24 @@ document.addEventListener('click', async e=>{
   const d = t.dataset;
 
   if(d.v){ showView(d.v); return; }
-  if(t.id==='lock'){ if(canEdit()){ forgetPass(); applyLock(); render(); toast('🔒 Zamčeno. Teď jen koukáš.'); } else unlock(); return; }
-  if(t.id==='change-pass'){
-    const p1 = prompt('Nové heslo (aspoň 4 znaky):'); if(!p1) return;
-    const p2 = prompt('Zopakuj nové heslo:'); if(p2===null) return;
-    if(p1!==p2){ toast('🙃 Hesla se neshodují.'); return; }
-    if(await op({action:'set_password', newPassword:p1})){ pass=p1; ls.set(LS_PASS,p1); toast('🔑 Heslo změněno.'); }
+  if(t.id==='lock' || t.id==='pw-lock'){
+    if(canEdit()) lockNow();
+    else { showView('nastaveni'); setTimeout(()=>{ const i=$('#pw-in')||$('#pw-new'); if(i) i.focus(); }, 300); }
     return;
+  }
+  if(t.id==='pw-unlock'){ unlockWith($('#pw-in').value); return; }
+  if(t.id==='pw-set'){ setPassword($('#pw-new').value, $('#pw-new2').value); return; }
+
+  // editor násobků
+  if(t.id==='mult-add'){
+    multDraft = readMultDraft();
+    const next = Math.max(0,...multDraft.map(x=>+x.m||0)) + 1;
+    multDraft.push({m:next, t:''}); renderNastaveni();
+    const ins = document.querySelectorAll('#mult-edit .mt'); if(ins.length) ins[ins.length-1].focus();
+    return;
+  }
+  if(d.mdel!==undefined){
+    multDraft = readMultDraft(); multDraft.splice(+d.mdel,1); renderNastaveni(); return;
   }
 
   if(t.id==='start-day'){
@@ -1108,7 +1222,7 @@ document.addEventListener('click', async e=>{
   }
   if(d.win){ ui.winner = ui.winner===d.win?null:d.win; renderForm(); return; }
   if(d.lose){ ui.loser = ui.loser===d.lose?null:d.lose; renderForm(); return; }
-  if(d.mult){ ui.mult = +d.mult; if(ui.mult===4) toast(rnd(MULT4_MSGS)); renderForm(); return; }
+  if(d.mult){ ui.mult = +d.mult; if(ui.mult===maxMult() && ui.mult>1) toast(rnd(MULT4_MSGS)); renderForm(); return; }
   if(d.pt){ setPoints((ui.points||0) + (+d.pt)); return; }
 
   if(t.id==='save'){
@@ -1116,9 +1230,9 @@ document.addEventListener('click', async e=>{
     const ok = await op({action:'add_game',participants:ui.participants,winner:ui.winner,loser:ui.loser,
       points:ui.points,mult:ui.mult,note:$('#note').value});
     if(ok){
-      rain(ui.mult===4 ? 50 : 26);
+      rain(ui.mult===maxMult() && ui.mult>1 ? 50 : 26);
       toast('💸 ' + rnd(PAY_MSGS)(l.name, w.name, amt));
-      ui.winner=null; ui.loser=null; ui.points=null; ui.mult=1; $('#note').value='';
+      ui.winner=null; ui.loser=null; ui.points=null; ui.mult=+firstMult(); $('#note').value='';
       renderForm(); ticker();
       window.scrollTo({top:0,behavior:'smooth'});
     }
@@ -1129,7 +1243,7 @@ document.addEventListener('click', async e=>{
     const [from,to,amt]=d.settle.split('|');
     const v = prompt(`Kolik ${P(from).name} zaplatil ${P(to).name}?`, amt);
     if(v===null) return;
-    const n = parseFloat(String(v).replace(',','.'));
+    const n = Math.round(parseFloat(String(v).replace(',','.')));   // jen celé koruny
     if(!(n>0)){ toast('🤨 To není částka, to je výmluva.'); return; }
     if(await op({action:'settle',from,to,amount:n})) toast('🤝 Vyrovnáno. Nad stolem vysvitlo sluníčko.');
     return;
@@ -1147,7 +1261,9 @@ document.addEventListener('click', async e=>{
   if(d.hide){ const [id,h]=d.hide.split('|'); await op({action:'remove_player',id,hidden:h==='1'}); return; }
   if(t.id==='add-player'){ addPlayer(); return; }
   if(t.id==='save-set'){
-    if(await op({action:'settings',pointValue:parseFloat($('#set-pv').value.replace(',','.')),currency:$('#set-cur').value})){
+    const list = readMultDraft().map(x=>({m:parseFloat(String(x.m).replace(',','.')), t:x.t}));
+    if(await op({action:'settings', pointValue:parseFloat($('#set-pv').value.replace(',','.')), currency:$('#set-cur').value, mults:list})){
+      multDraft = null; payDirty = false; renderNastaveni(); renderForm();
       toast('⚙️ Uloženo. Úřad děkuje za spolupráci.');
     }
     return;
@@ -1178,6 +1294,15 @@ function updNewTok(){
   t.style.background = n ? tokColor(n.replace(/\s+/g,' ')) : '#bbb';
 }
 $('#new-name').addEventListener('input', updNewTok);
+document.addEventListener('input', e=>{
+  if(e.target.closest && e.target.closest('#mult-edit')) multDraft = readMultDraft();
+  if(e.target.id==='set-pv' || e.target.id==='set-cur') payDirty = true;
+});
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Enter') return;
+  if(e.target.id==='pw-in') unlockWith(e.target.value);
+  if(e.target.id==='pw-new2') setPassword($('#pw-new').value, e.target.value);
+});
 $('#new-name').addEventListener('keydown',e=>{ if(e.key==='Enter') addPlayer(); });
 $('#pts').addEventListener('input',e=>{
   const v = e.target.value.trim();

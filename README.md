@@ -7,8 +7,8 @@ platba = zaokrouhlit(body v ruce poraženého × koeficient) × násobek zavřen
 ```
 
 - **Body v ruce** – posuvník nebo pole (0–999)
-- **Násobek** – ×1, ×2, ×3, ×4 (např. zavření červeným svrškem = ×4)
-- **Koeficient platby** – v Nastavení, výchozí 0,1 (zaokrouhluje se na celé, 0,5 nahoru)
+- **Násobek** – výchozí ×1, ×2, ×3, ×4 (např. zavření červeným svrškem = ×4); dají se měnit, přidávat i mazat v záložce **Nastavení** (i desetinné, např. ×1,5)
+- **Koeficient platby** – v Nastavení, výchozí 0,1. Platba je vždy v **celých korunách** (0,5 nahoru): body × koeficient se zaokrouhlí, a pokud je násobek desetinný, zaokrouhlí se i výsledek. S koeficientem 1 se nic nezaokrouhluje (67 b × 2 = 134).
 
 Příklad s koeficientem 0,1: 67 b → 6,7 → **7** × 2 = **14** · 64 b → 6,4 → **6** × 2 = **12**
 
@@ -17,10 +17,10 @@ Ostatní hráči u stolu se zapisují jen jako přihlížející – vypořádá
 ## Heslo pro úpravy
 
 - Bez hesla je aplikace **jen pro čtení** – každý vidí hry naživo, žebříčky a bilanci.
-- Tlačítko **🔒 Jen čtení · odemknout úpravy** v hlavičce:
+- Heslo má vlastní kolonku v záložce **Nastavení** (tlačítko 🔒 v hlavičce tam přímo přepne):
   - poprvé (heslo ještě není) – rovnou si heslo zvolíš,
-  - potom – zadáš heslo a telefon si ho zapamatuje.
-- Heslo se dá změnit v záložce **Hráči → Nastavení**.
+  - potom – zadáš heslo a telefon si ho zapamatuje,
+  - když je odemčeno, je tam i zamknutí a změna hesla.
 - Na serveru je uložené jen jako otisk v `data/auth.json` a ven se nikdy neposílá. Každý zápis server znovu ověří.
 - **Heslo nastav hned po nasazení** – dokud není nastavené, může ho zvolit kdokoli, kdo stránku otevře první.
 

@@ -11,6 +11,15 @@ $dir  = __DIR__ . '/data';
 $file = $dir . '/prsicko.json';
 $authFile = $dir . '/auth.json';   // hash hesla pro úpravy – nikdy se neposílá ven
 
+function default_mults() {
+    return [
+        ['m' => 1, 't' => 'obyčejně'],
+        ['m' => 2, 't' => 'dvojitě'],
+        ['m' => 3, 't' => 'trojitě'],
+        ['m' => 4, 't' => 'červeným svrškem'],
+    ];
+}
+
 function empty_db() {
     return [
         'players'     => [],
@@ -18,8 +27,9 @@ function empty_db() {
         'sessions'    => [],
         'games'       => [],
         'settlements' => [],
-        // pointValue = koeficient platby; platba = round(body × koeficient) × násobek
-        'settings'    => ['pointValue' => 0.1, 'currency' => 'Kč'],
+        // pointValue = koeficient platby; platba = round(body × koeficient) × násobek, vždy celé koruny
+        // mults = násobky zavření, upravitelné v Nastavení
+        'settings'    => ['pointValue' => 0.1, 'currency' => 'Kč', 'mults' => default_mults()],
         'rev'         => 0,
     ];
 }
@@ -166,11 +176,17 @@ switch ($in['action']) {
         // př. koeficient 0,1: 67 b → 6,7 → 7 × 2 = 14;  64 b → 6,4 → 6 × 2 = 12
         $points = (int)($in['points'] ?? -1);
         if ($points < 0 || $points > 999) fail(400, 'Body v ruce musí být 0–999');
-        $mult = (int)($in['mult'] ?? 1);
-        if (!in_array($mult, [1, 2, 3, 4], true)) fail(400, 'Násobek může být jen ×1, ×2, ×3 nebo ×4');
+        // násobek musí být jeden z těch v Nastavení
+        $mult = (float)($in['mult'] ?? 0);
+        $multLabel = null;
+        foreach ((array)$db['settings']['mults'] as $mm) {
+            if (abs((float)$mm['m'] - $mult) < 0.0001) { $mult = (float)$mm['m']; $multLabel = $mm['t']; break; }
+        }
+        if ($multLabel === null) fail(400, 'Takový násobek v Nastavení není');
+        if ($mult == (int)$mult) $mult = (int)$mult;
         $pv = (float)$db['settings']['pointValue'];
-        $base = (int)round($points * $pv + 1e-9);   // +1e-9 kvůli 6,5 → 7 (float nepřesnost)
-        $stake = $base * $mult;
+        $base  = (int)round($points * $pv + 1e-9);    // body × koeficient → celé (+1e-9 kvůli 6,5 → 7)
+        $stake = (int)round($base * $mult + 1e-9);    // × násobek → vždy celé koruny
         $parts = array_values(array_unique(array_filter((array)($in['participants'] ?? []), $hasPlayer)));
         if (!in_array($w, $parts, true)) $parts[] = $w;
         if (!in_array($l, $parts, true)) $parts[] = $l;
@@ -183,6 +199,7 @@ switch ($in['action']) {
             'loser'        => $l,
             'points'       => $points,
             'mult'         => $mult,
+            'multLabel'    => $multLabel,
             'pointValue'   => $pv,
             'base'         => $base,
             'stake'        => $stake,
@@ -196,7 +213,7 @@ switch ($in['action']) {
 
     case 'settle':
         $f = $in['from'] ?? ''; $t = $in['to'] ?? '';
-        $amt = round((float)($in['amount'] ?? 0), 2);
+        $amt = (int)round((float)($in['amount'] ?? 0));   // jen celé koruny
         if (!$hasPlayer($f) || !$hasPlayer($t) || $f === $t || $amt <= 0) fail(400, 'Neplatné vyrovnání');
         $db['settlements'][] = ['id' => uid(), 'ts' => time(), 'from' => $f, 'to' => $t, 'amount' => $amt];
         break;
@@ -211,6 +228,21 @@ switch ($in['action']) {
         $db['settings']['pointValue'] = $pv;
         $cur = clean_str($in['currency'] ?? $db['settings']['currency'], 8);
         if ($cur !== '') $db['settings']['currency'] = $cur;
+        if (isset($in['mults'])) {
+            $list = []; $seen = [];
+            foreach ((array)$in['mults'] as $mm) {
+                $m = round((float)($mm['m'] ?? 0), 2);
+                $t = clean_str($mm['t'] ?? '', 30);
+                if ($m <= 0 || $m > 100) fail(400, 'Násobek musí být větší než 0 a nejvýš 100');
+                if (isset($seen[(string)$m])) fail(400, 'Násobek ×' . $m . ' je tam dvakrát');
+                $seen[(string)$m] = true;
+                $list[] = ['m' => ($m == (int)$m ? (int)$m : $m), 't' => $t];
+            }
+            if (!$list) fail(400, 'Aspoň jeden násobek musí zůstat');
+            if (count($list) > 10) fail(400, 'Nejvýš 10 násobků');
+            usort($list, function ($a, $b) { return $a['m'] <=> $b['m']; });
+            $db['settings']['mults'] = $list;
+        }
         break;
 
     default:
