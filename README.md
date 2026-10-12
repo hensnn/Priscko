@@ -1,6 +1,6 @@
 # ☔ Prsíčko 2.0
 
-Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace bez databázového serveru – stačí `index.html`, `api.php` a jeden JSON soubor.
+Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace bez databázového serveru – stačí `index.html`, `api.php`, logo a jeden JSON soubor.
 
 <p align="center"><img src="docs/nahled.png" alt="Náhled aplikace" width="100%"></p>
 
@@ -60,7 +60,7 @@ Výchozí zkratka jsou první dvě písmena přezdívky. Je-li obsazená, použi
 
 Potřeba je webový server s **PHP 7.4+**.
 
-1. Nahraj `index.html` a `api.php` do jedné složky.
+1. Nahraj `index.html`, `api.php` a složku `img/` do jedné složky.
 2. Vytvoř vedle nich složku `data/` s právem zápisu pro PHP.
 3. Zakaž přímý přístup ke složce `data/`.
 4. Otevři aplikaci a v **Nastavení** zvol heslo.
@@ -101,5 +101,6 @@ Zálohu lze stáhnout i v aplikaci (**Nastavení → Stáhnout databázi**). Obn
 |---|---|
 | `index.html` | aplikace – vzhled a logika |
 | `api.php` | ukládání dat, kontrola hesla, výpočty |
+| `img/` | logo a ikony aplikace |
 | `install-caddy.sh` | instalace a aktualizace pro Debian/Ubuntu s Caddy |
 | `docs/` | obrázky k README |

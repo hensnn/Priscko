@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#14532d">
 <title>Prsíčko 2.0 ☔ Úřad pro evidenci deště karet</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☔</text></svg>">
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -32,7 +33,11 @@ button,input,select{font:inherit;color:inherit}
 /* ---------- HLAVIČKA ---------- */
 header{position:relative;padding:18px 0 6px;text-align:center}
 .cloud{font-size:42px;display:inline-block;animation:bob 3s ease-in-out infinite}
-.robin{display:block;width:min(230px,62vw);margin:0 auto -6px;animation:bob 3s ease-in-out infinite;overflow:visible}
+.logo-img{
+  display:block;width:min(230px,60vw);height:auto;margin:0 auto 4px;border-radius:50%;cursor:pointer;
+  filter:drop-shadow(6px 6px 0 var(--ink));animation:bob 3s ease-in-out infinite
+}
+.logo-img:active{transform:scale(.95) rotate(-4deg)}
 .titlewrap{position:relative;display:inline-block;padding-right:50px}
 .ver{
   position:absolute;right:-4px;top:-20px;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
@@ -439,54 +444,15 @@ body.ro .lockbtn{background:#fff}
 @keyframes pop{from{transform:translateX(-50%) scale(.6) rotate(8deg);opacity:0}}
 .foot{text-align:center;color:#d8f3dc;font-size:12px;font-weight:700;opacity:.8;margin:20px 0}
 @media (prefers-reduced-motion:reduce){
-  .cloud,.drop,.pill.live,.robin,.ver{animation:none!important}.drop{display:none}
+  .cloud,.drop,.pill.live,.logo-img,.ver{animation:none!important}.drop{display:none}
 }
 </style>
 </head>
 <body>
 
 <header class="wrap">
-  <!-- maskot: červenka – ptáček proslulý svým oranžovým prsíčkem -->
-  <svg class="robin" viewBox="0 0 210 150" role="img" aria-label="Červenka s prsíčkem pod deštníkem">
-    <g fill="#7cc6fe" stroke="#1b1b1b" stroke-width="1.5">
-      <path d="M18 34q5 8 0 12q-5-4 0-12z"/><path d="M178 18q5 8 0 12q-5-4 0-12z"/>
-      <path d="M196 64q5 8 0 12q-5-4 0-12z"/><path d="M10 96q5 8 0 12q-5-4 0-12z"/><path d="M30 64q4 6 0 9q-4-3 0-9z"/>
-    </g>
-    <!-- deštník -->
-    <path d="M38 56 Q90 -4 142 56 Z" fill="#d62828" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M90 22 Q72 34 64 56 M90 22 Q108 34 116 56" fill="none" stroke="#1b1b1b" stroke-width="2.5"/>
-    <path d="M38 56 Q51 48 64 56 Q77 48 90 56 Q103 48 116 56 Q129 48 142 56" fill="#fff8e7" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M90 22 V50" stroke="#1b1b1b" stroke-width="3"/>
-    <path d="M90 56 V98 Q90 106 82 104" fill="none" stroke="#1b1b1b" stroke-width="3.5" stroke-linecap="round"/>
-    <!-- ocas -->
-    <path d="M60 112 L34 128 L62 126 Z" fill="#6b4226" stroke="#1b1b1b" stroke-width="3" stroke-linejoin="round"/>
-    <!-- tělo + hlava -->
-    <ellipse cx="94" cy="110" rx="37" ry="30" fill="#8a5a3c" stroke="#1b1b1b" stroke-width="3"/>
-    <circle cx="114" cy="84" r="20" fill="#8a5a3c" stroke="#1b1b1b" stroke-width="3"/>
-    <ellipse cx="96" cy="106" rx="26" ry="18" fill="#8a5a3c"/>
-    <!-- TO PRSÍČKO -->
-    <ellipse cx="108" cy="108" rx="23" ry="21" fill="#ff6b1a" stroke="#1b1b1b" stroke-width="2.5"/>
-    <ellipse cx="101" cy="100" rx="7" ry="5" fill="#fff" opacity=".55" transform="rotate(-25 101 100)"/>
-    <!-- oko, tvář, zobák -->
-    <circle cx="120" cy="80" r="6" fill="#fff" stroke="#1b1b1b" stroke-width="2"/>
-    <circle cx="121.5" cy="80" r="3" fill="#1b1b1b"/>
-    <path d="M115 72 l2 -4 M119 71 l1 -5 M123 72 l2 -4" stroke="#1b1b1b" stroke-width="1.6" stroke-linecap="round"/>
-    <circle cx="124" cy="91" r="3.5" fill="#ff8fab" opacity=".8"/>
-    <path d="M131 84 L146 88 L131 93 Z" fill="#f4b400" stroke="#1b1b1b" stroke-width="2" stroke-linejoin="round"/>
-    <!-- křídlo s kartou -->
-    <g transform="rotate(-18 66 94)">
-      <rect x="58" y="80" width="17" height="24" rx="3" fill="#fff8e7" stroke="#1b1b1b" stroke-width="2"/>
-      <path d="M66.5 96s-4-2.5-4-5.2c0-1.5 1.1-2.4 2.3-2.4 .8 0 1.4.4 1.7 1 .3-.6.9-1 1.7-1 1.2 0 2.3.9 2.3 2.4 0 2.7-4 5.2-4 5.2z" fill="#d62828"/>
-    </g>
-    <path d="M66 104 Q80 92 96 106 Q84 124 64 116 Z" fill="#6b4226" stroke="#1b1b1b" stroke-width="2.5" stroke-linejoin="round"/>
-    <!-- nožky -->
-    <path d="M88 139 l-2 9 m-4 0 h8 M102 139 l2 9 m-4 0 h8" stroke="#f4b400" stroke-width="3" stroke-linecap="round"/>
-    <!-- popisek -->
-    <path d="M168 116 Q156 124 136 114" fill="none" stroke="#f4b400" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M136 114 l9 -2 m-9 2 l5 7" stroke="#f4b400" stroke-width="2.5" stroke-linecap="round"/>
-    <text x="186" y="98" text-anchor="middle" fill="#f4b400" font-family="Bangers, Impact, sans-serif" font-size="15" transform="rotate(-8 186 104)">
-      <tspan x="186">to je to</tspan><tspan x="186" dy="16">prsíčko!</tspan></text>
-  </svg>
+  <!-- logo -->
+  <img class="logo-img" id="logo-img" src="img/logo.webp" width="512" height="512" alt="Prsíčko – logo" title="Klikni, ať zaprší">
   <div class="titlewrap"><h1 id="logo" title="Klikni, ať zaprší">PRSÍČKO</h1><span class="ver" aria-label="verze 2.0">2.0</span></div>
   <div class="stamp">☔ Úřad pro evidenci deště karet · prší, nebo platíš</div>
   <div class="fan" id="fan" aria-hidden="true"></div>
@@ -1740,6 +1706,7 @@ $('#pts').addEventListener('input',e=>{
 });
 $('#pts-range').addEventListener('input',e=>setPoints(+e.target.value));
 $('#logo').addEventListener('click',()=>{ rain(18); ticker(); });
+$('#logo-img').addEventListener('click',()=>{ rain(18); ticker(); });
 
 /* --- vějíř karet v hlavičce --- */
 $('#fan').innerHTML = card('srdce','A') + card('zelene','VII') + card('srdce','Sv') + card('kule','K');

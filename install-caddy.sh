@@ -36,6 +36,8 @@ echo "☔ 2/6 Stahuji Prsíčko do $WEB…"
 mkdir -p "$WEB/data"
 curl -fsSL "$REPO/index.html" -o "$WEB/index.html"
 curl -fsSL "$REPO/api.php"    -o "$WEB/api.php"
+mkdir -p "$WEB/img"
+for f in logo.webp favicon.png icon-192.png; do curl -fsSL "$REPO/img/$f" -o "$WEB/img/$f"; done
 
 echo "☔ 3/6 Připravuji úložiště dat…"
 if [ -s "$WEB/data/prsicko.json" ]; then
