@@ -522,7 +522,7 @@ body.ro .lockbtn{background:#fff}
     <!-- 4) kdo dnes hraje + ukončení dne – až dole, mění se jen občas -->
     <div class="panel hidden edit-only" id="table-panel">
       <h2>🪑 Kdo dnes hraje</h2>
-      <p class="sub">Tihle se nahoře nabízejí jako vítěz a poražený. Když nevybereš nikoho, nabízejí se všichni.</p>
+      <p class="sub">Ve výchozím stavu hrají všichni. Kdo zrovna nehraje, toho ťuknutím odeber – nebude se nabízet a nezapíše se ke hře.</p>
       <div class="chips" id="pick-part"></div>
       <div style="display:flex;gap:8px;margin-top:12px">
         <input class="txt" id="quick-name" maxlength="24" placeholder="Nový hráč – přezdívka">
@@ -1194,8 +1194,8 @@ function renderForm(){
 
   $('#pick-part').innerHTML = !vp.length
     ? `<div class="empty"><span class="em">🪑</span>Zatím žádní hráči. Přidej je v záložce <b>Hráči</b>.</div>`
-    : vp.map(p=>nameChip(p, ui.participants.includes(p.id), `data-part="${p.id}"`)).join('')
-      + chip('plain', false, ui.participants.length===vp.length ? '✖️ Nikdo' : '✨ Všichni', 'data-all="1"');
+    : vp.map(p=>nameChip(p, !ui.participants.length || ui.participants.includes(p.id), `data-part="${p.id}"`)).join('')
+      + (ui.participants.length ? chip('plain', false, '✨ Zase všichni', 'data-all="1"') : '');
 
   // u stolu = vybraní hráči; když není vybraný nikdo, nabízejí se všichni
   const parts = tablePlayers();
@@ -1576,13 +1576,14 @@ document.addEventListener('click', async e=>{
     return;
   }
 
-  if(d.all){
-    const vp=visiblePlayers().map(p=>p.id);
-    ui.participants = ui.participants.length===vp.length ? [] : vp;
-    saveUI(); renderForm(); return;
-  }
+  // u stolu: výchozí jsou všichni (prázdný výběr = všichni, i nově přidaní); ťuknutím se hráč odebere / vrátí
+  if(d.all){ ui.participants = []; saveUI(); renderForm(); return; }
   if(d.part){
-    ui.participants = ui.participants.includes(d.part) ? ui.participants.filter(x=>x!==d.part) : [...ui.participants,d.part];
+    const all = visiblePlayers().map(p=>p.id);
+    let cur = ui.participants.length ? [...ui.participants] : [...all];
+    cur = cur.includes(d.part) ? cur.filter(x=>x!==d.part) : [...cur, d.part];
+    if(cur.length < 2){ toast('🪑 U stolu musí sedět aspoň dva.'); return; }
+    ui.participants = all.every(id=>cur.includes(id)) ? [] : cur;
     saveUI(); renderForm(); return;
   }
   if(d.win){ ui.winner = ui.winner===d.win?null:d.win; renderForm(); return; }
