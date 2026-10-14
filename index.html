@@ -1361,6 +1361,9 @@ function renderBilance(){
   const days = allDays().filter(d=>d.closedTs && d.games.length);
   const kings = {}; days.forEach(d=>{ const r=ranking(d.games); if(r[0]&&r[0].v>0) kings[r[0].id]=(kings[r[0].id]||0)+1; });
   const tw=top(wins), tl=top(losses), tpt=top(pts), tk=top(kings);
+  // rekord jedné hry: nejvíc bodů v ruce poraženého v jediné hře
+  const maxHand = g.filter(x=>x.points!=null).reduce((m,x)=>!m||x.points>m.points?x:m,null);
+  const handDate = x => { const d = db.sessions.find(s=>s.id===x.sessionId); const dt = d ? parseIso(d.date) : new Date(x.ts*1000); return `${dt.getDate()}. ${dt.getMonth()+1}.`; };
   const pot = g.reduce((s,x)=>s+x.stake,0);
   const biggest = g.reduce((m,x)=>!m||x.stake>m.stake?x:m,null);
   const mx = maxMult();
@@ -1374,7 +1377,8 @@ function renderBilance(){
     ['🏆', tw?nm(tw.k):'—', tw?`nejvíc výher (${tw.v})`:'nejvíc výher'],
     ['💧', tl?nm(tl.k):'—', tl?`nejvíc proher (${tl.v})`:'nejvíc proher'],
     ['🔴', tx4?nm(tx4.k):'—', tx4?`král ×${numC(mx)} zavření (${tx4.v}×)`:`král ×${numC(mx)} zavření`],
-    ['🎒', tpt?nm(tpt.k):'—', tpt?`nejvíc bodů v ruce (${tpt.v} b)`:'nejvíc bodů v ruce'],
+    ['🎒', maxHand?nm(maxHand.loser):'—', maxHand?`nejvíc bodů v jedné ruce (${maxHand.points} b, ${handDate(maxHand)})`:'nejvíc bodů v jedné ruce'],
+    ['🧳', tpt?nm(tpt.k):'—', tpt?`nejvíc bodů celkem (${tpt.v} b ze všech proher)`:'nejvíc bodů celkem'],
     ['🌊', biggest?money(biggest.stake):'—', biggest?`největší liják (${biggest.points??'?'} b × ${numC(+(biggest.mult??1))})`:'největší liják v jedné hře'],
   ].map(([i,b,s])=>`<div class="stat"><span>${i} ${s}</span><b>${b}</b></div>`).join('');
 }
