@@ -1145,6 +1145,8 @@ function render(){
   renderDen(); renderBilance(); renderHraci(); renderNastaveni();
 }
 const visiblePlayers = () => db.players.filter(p=>!p.hidden);
+// kdo sedí u stolu: vybraní v „Kdo dnes hraje“, a když není vybraný nikdo, tak všichni
+const tablePlayers = () => { const vp = visiblePlayers(); return ui.participants.length ? vp.filter(p=>ui.participants.includes(p.id)) : vp; };
 
 function renderDen(){
   const open = openSession();
@@ -1196,7 +1198,7 @@ function renderForm(){
       + chip('plain', false, ui.participants.length===vp.length ? '✖️ Nikdo' : '✨ Všichni', 'data-all="1"');
 
   // u stolu = vybraní hráči; když není vybraný nikdo, nabízejí se všichni
-  const parts = ui.participants.length ? vp.filter(p=>ui.participants.includes(p.id)) : vp;
+  const parts = tablePlayers();
   if(!parts.some(p=>p.id===ui.winner)) ui.winner=null;
   if(!parts.some(p=>p.id===ui.loser)) ui.loser=null;
 
@@ -1590,7 +1592,7 @@ document.addEventListener('click', async e=>{
 
   if(t.id==='save'){
     const w=P(ui.winner), l=P(ui.loser), amt=moneyTxt(calc(ui.points,ui.mult).stake);
-    const ok = await op({action:'add_game',participants:ui.participants,winner:ui.winner,loser:ui.loser,
+    const ok = await op({action:'add_game',participants:tablePlayers().map(p=>p.id),winner:ui.winner,loser:ui.loser,
       points:ui.points,mult:ui.mult,note:$('#note').value});
     if(ok){
       rain(ui.mult===maxMult() && ui.mult>1 ? 50 : 26);
