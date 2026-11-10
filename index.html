@@ -741,10 +741,11 @@ function tok(p, size){
 let db = null, online = true, busy = false;
 let pass = '';
 let ui = {participants:[], winner:null, loser:null, points:null, mult:null};
-ui.participants = (safeJSON(ls.get(LS_UI))||{}).participants || [];
+// výběr „kdo hraje“ platí jen pro jeden herní den – nový den začíná se všemi u stolu
+{ const st = safeJSON(ls.get(LS_UI)) || {}; ui.participants = st.participants || []; ui.sessionId = st.sessionId || null; }
 
 function safeJSON(s){ try{return JSON.parse(s)}catch(e){return null} }
-function saveUI(){ ls.set(LS_UI, JSON.stringify({participants:ui.participants})); }
+function saveUI(){ ls.set(LS_UI, JSON.stringify({participants:ui.participants, sessionId:ui.sessionId})); }
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const P = id => db.players.find(p=>p.id===id) || {name:'??', id};
@@ -1189,6 +1190,8 @@ function renderDen(){
 }
 
 function renderForm(){
+  const open = openSession();
+  if(open && ui.sessionId !== open.id){ ui.participants = []; ui.sessionId = open.id; saveUI(); }   // nový den = všichni
   const vp = visiblePlayers();
   ui.participants = ui.participants.filter(id=>vp.some(p=>p.id===id));
 
