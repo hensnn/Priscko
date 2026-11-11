@@ -7,7 +7,7 @@ Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace
 ## Funkce
 
 - 🃏 **Herní den** – večer se otevře den, hry se zapisují pod něj, po ukončení vznikne žebříček dne.
-- 🎚️ **Rychlý zápis** – vítěz, poražený, body v ruce (posuvník) a násobek; částka se počítá živě.
+- 🎚️ **Rychlý zápis** – vítěz, poražený, body v ruce a násobek; částka se počítá živě.
 - 💰 **Platba** – body × koeficient, zaokrouhlit na celé, × násobek zavření.
 - 📃 **Přehled her** – každá hra na jeden řádek: 🏆 vítěz · 💧 poražený · částka, detail na ťuknutí.
 - 📅 **Bilance** – výsledky po dnech, celkový žebříček, kdo komu dluží, statistiky.

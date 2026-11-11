@@ -257,9 +257,7 @@ input.txt{
 .scorebox .mult{padding:3px 2px;font-size:9px;line-height:1.05;border-radius:12px;display:flex;flex-direction:column;justify-content:center}
 .scorebox .mult b{font-size:27px;line-height:1}
 .slider{display:flex;align-items:center;gap:8px;margin-top:12px}
-.slider input[type=range]{flex:1;margin:0;height:24px}
-.slider input[type=range]::-webkit-slider-thumb{width:46px;height:46px}
-.slider input[type=range]::-moz-range-thumb{width:42px;height:42px}
+.slider .btn.sq{flex:1;width:auto}
 .total{
   margin-top:14px;background:var(--ink);color:#fff;border-radius:18px;padding:10px 12px 12px;text-align:center;
   box-shadow:4px 4px 0 var(--red);transform:rotate(-.6deg)
@@ -497,7 +495,6 @@ body.ro .lockbtn{background:#fff}
       </div>
       <div class="slider">
         <button class="btn sq" data-pt="-1" aria-label="o bod méně">−</button>
-        <input id="pts-range" type="range" min="0" max="120" step="1" value="0" aria-label="Body v ruce">
         <button class="btn sq" data-pt="1" aria-label="o bod víc">+</button>
       </div>
 
@@ -1214,7 +1211,6 @@ function renderForm(){
   $('#pick-lose').innerHTML = seats('loser','💧');
 
   if(document.activeElement!==$('#pts')) $('#pts').value = ui.points===null ? '' : ui.points;
-  $('#pts-range').value = Math.min(ui.points||0, +$('#pts-range').max);
 
   if(!mults().some(x=>+x.m===ui.mult)) ui.mult = +firstMult();
   $('#pick-mult').innerHTML = mults().map(x=>
@@ -1726,7 +1722,6 @@ $('#pts').addEventListener('input',e=>{
   ui.points = v==='' ? null : Math.max(0, Math.min(999, parseInt(v,10)||0));
   renderForm();
 });
-$('#pts-range').addEventListener('input',e=>setPoints(+e.target.value));
 $('#logo').addEventListener('click',()=>{ rain(18); ticker(); });
 $('#logo-img').addEventListener('click',()=>{ rain(18); ticker(); });
 
