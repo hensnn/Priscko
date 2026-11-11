@@ -52,6 +52,10 @@ Dluhy se počítají po dvojicích a vzájemně se odečtou:
 - Vyrovnání dne ukazuje stav za jeden večer, Bilance za všechny dny po odečtení zaplaceného.
 - Zaplacení nemění žebříček – ten se počítá jen z her.
 
+### Počáteční stav
+
+Zůstatky hráčů z doby před Prsíčkem jde jednorázově zadat v **Nastavení → Počáteční stav** (plus = vyhrál, minus = prohrál). Započtou se do celkového žebříčku a do tabulky dnů jako řádek „Před Prsíčkem“. Dluhy ani statistiky her neovlivní.
+
 ### Zkratky hráčů
 
 Výchozí zkratka jsou první dvě písmena přezdívky. Je-li obsazená, použije se další písmeno, u dvou slov iniciály, jinak číslo. Zkratku lze přepsat; duplicitní aplikace nepovolí.
@@ -89,7 +93,7 @@ Bez PHP (např. GitHub Pages) běží aplikace v offline režimu – data se ukl
 
 | Soubor | Obsah |
 |---|---|
-| `data/prsicko.json` | hráči, herní dny, hry, vyrovnání, nastavení |
+| `data/prsicko.json` | hráči, herní dny, hry, vyrovnání, počáteční stav, nastavení |
 | `data/prsicko.bak.json` | předchozí verze (ukládá se automaticky) |
 | `data/auth.json` | otisk hesla |
 

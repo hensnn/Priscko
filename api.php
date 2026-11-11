@@ -27,6 +27,8 @@ function empty_db() {
         'sessions'    => [],
         'games'       => [],
         'settlements' => [],
+        // počáteční stav z doby před Prsíčkem: {ts, balances:{id:Kč}} nebo null – jen do žebříčku
+        'opening'     => null,
         // pointValue = koeficient platby; platba = round(body × koeficient) × násobek, vždy celé koruny
         // mults = násobky zavření, upravitelné v Nastavení
         'settings'    => ['pointValue' => 0.1, 'currency' => 'Kč', 'mults' => default_mults()],
@@ -325,6 +327,24 @@ switch ($in['action']) {
         foreach ($db['settlements'] as &$st) if ($st['id'] === ($in['id'] ?? '')) { $st['amount'] = $amt; $found = true; }
         unset($st);
         if (!$found) fail(400, 'Vyrovnání nenalezeno');
+        break;
+
+    // --- počáteční zůstatky (jednorázově, z doby před Prsíčkem) ---
+    case 'set_opening':
+        $bal = [];
+        foreach ((array)($in['balances'] ?? []) as $pid => $v) {
+            $pid = (string)$pid;   // ID z číslic by PHP jinak převedlo na číslo
+            if (!$hasPlayer($pid)) fail(400, 'Neznámý hráč');
+            $v = (int)round((float)$v);
+            if (abs($v) > 1000000) fail(400, 'Moc velká částka');
+            if ($v !== 0) $bal[$pid] = $v;
+        }
+        if (!$bal) fail(400, 'Zadej aspoň jeden zůstatek');
+        $db['opening'] = ['ts' => time(), 'balances' => $bal];
+        break;
+
+    case 'clear_opening':
+        $db['opening'] = null;
         break;
 
     case 'delete_game':

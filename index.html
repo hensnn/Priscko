@@ -435,6 +435,19 @@ body.ro .lockbtn{background:#fff}
 .pwrow{display:flex;gap:8px;flex-wrap:wrap}
 .pwrow input{flex:1;min-width:150px}
 .btn.dirty{background:var(--mustard);animation:pulse 1.2s infinite}
+details.panel{transform:none!important}
+.impsum{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.impsum::-webkit-details-marker{display:none}
+.impsum::after{content:"▼";margin-left:auto;font-weight:900}
+details[open] > .impsum::after{content:"▲"}
+.obal{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.obal .nm{font-weight:900;flex:1}
+.obal input{width:110px;text-align:right;font-family:var(--display);font-size:22px;border:3px solid var(--ink);border-radius:10px;padding:4px 8px;background:#fff}
+.osum{margin:10px 0;padding:10px;border:3px solid var(--ink);border-radius:12px;font-weight:800;background:#c9f7d3}
+.osum.bad{background:#ffe0e0}
+.daytbl tr.opening td{background:#f6f1e3;font-style:italic}
+.daytbl tr.opening td:first-child{background:#efe7d2}
+.pays{font-size:13px;font-weight:900;font-style:italic;opacity:.75;white-space:nowrap}
 .okbox{background:#c9f7d3;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;font-weight:900;margin-bottom:10px}
 .dayline{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px;margin:2px 0 2px;flex-wrap:wrap;opacity:.85}
 .dayline .pill{border-color:var(--ink);color:#fff}
@@ -609,6 +622,15 @@ body.ro .lockbtn{background:#fff}
       <p class="sub">Celá databáze do souboru – pro jistotu nebo pro přenos.</p>
       <button class="btn" id="export">⬇️ Stáhnout databázi (JSON)</button>
     </div>
+
+    <!-- počáteční zůstatky – použije se jednou, proto sbalené -->
+    <details class="panel" id="open-panel">
+      <summary class="impsum"><h2 style="margin:0">📜 Počáteční stav</h2><span class="sub" style="margin:0">zůstatky z doby před Prsíčkem</span></summary>
+      <p class="sub" style="margin-top:10px">Kolik byl kdo v plusu nebo v mínusu, než jste začali zapisovat do Prsíčka.
+        <b>Plus</b> = vyhrál, <b>mínus</b> = prohrál.
+        Zůstatky se započtou do celkového žebříčku a do tabulky dnů (řádek „Před Prsíčkem“). Dluhy ani statistiky her neovlivní.</p>
+      <div id="open-box"></div>
+    </details>
   </section>
 
   <div class="foot">Prsíčko · neoficiální, nezávislé, mírně vlhké · <span id="mode"></span></div>
@@ -906,6 +928,13 @@ function applyLocal(o){
         points,mult,multLabel:mm.t,pointValue:pv(),base:c.base,stake:c.stake,note:(o.note||'').slice(0,120)}); break;
     }
     case 'delete_game': db.games = db.games.filter(g=>g.id!==o.id); break;
+    case 'set_opening': {
+      const bal = {};
+      for(const [id,v] of Object.entries(o.balances||{})){ if(!has(id)) return 'Neznámý hráč'; const n=Math.round(+v||0); if(n) bal[id]=n; }
+      if(!Object.keys(bal).length) return 'Zadej aspoň jeden zůstatek';
+      db.opening = {ts:now, balances:bal}; break;
+    }
+    case 'clear_opening': db.opening = null; break;
     case 'set_session_date': {
       if(!/^\d{4}-\d{2}-\d{2}$/.test(o.date||'')) return 'Neplatné datum';
       const ss = db.sessions.find(x=>x.id===o.id); if(!ss) return 'Herní den nenalezen';
@@ -1012,6 +1041,8 @@ function pairDebts(games, settlements=[]){
   return out.sort((a,b)=>b.amt-a.amt);
 }
 
+// počáteční stav: zůstatky hráčů z doby před Prsíčkem (jen do žebříčku a tabulky dnů, ne do dluhů)
+const openingBal = () => (db.opening && db.opening.balances) || {};
 function balances(){
   const b = {}; db.players.forEach(p=>b[p.id]=0);
   db.games.forEach(g=>{ b[g.winner]=(b[g.winner]||0)+g.stake; b[g.loser]=(b[g.loser]||0)-g.stake; });
@@ -1069,7 +1100,7 @@ function debtsHtml(list, withSettle){
   if(!list.length) return `<div class="empty" style="padding:8px"><span class="em" style="font-size:32px">🌈</span>Nikdo nikomu nic nedluží.</div>`;
   return `<div class="rank" style="gap:6px">${list.map(x=>`
     <div class="mdebt">
-      ${tok(P(x.debtor),'s')} ${esc(P(x.debtor).name)} <span>💸</span> ${tok(P(x.creditor),'s')} ${esc(P(x.creditor).name)}
+      ${tok(P(x.debtor),'s')} ${esc(P(x.debtor).name)} <span class="pays">platí →</span> ${tok(P(x.creditor),'s')} ${esc(P(x.creditor).name)}
       <span class="val">${money(x.amt)}</span>
       ${withSettle?`<button class="btn small ok edit-only" data-settle="${x.debtor}|${x.creditor}|${x.amt}">🤝 Vyrovnáno</button>`:''}
     </div>`).join('')}</div>`;
@@ -1140,7 +1171,7 @@ function gamesList(games){
 function render(){
   if(!db) return;
   applyLock();
-  renderDen(); renderBilance(); renderHraci(); renderNastaveni();
+  renderDen(); renderBilance(); renderHraci(); renderNastaveni(); renderOpening();
 }
 const visiblePlayers = () => db.players.filter(p=>!p.hidden);
 // kdo sedí u stolu: vybraní v „Kdo dnes hraje“, a když není vybraný nikdo, tak všichni
@@ -1223,7 +1254,7 @@ function renderForm(){
   const L = ui.loser ? `${tok(P(ui.loser),'s')} ${esc(P(ui.loser).name)}` : '<span class="q">💧 kdo zůstal?</span>';
   const W = ui.winner ? `${tok(P(ui.winner),'s')} ${esc(P(ui.winner).name)}` : '<span class="q">🏆 kdo zavřel?</span>';
   $('#preview').innerHTML = `
-    <div class="who">${L} <span>💸➡️</span> ${W}</div>
+    <div class="who">${L} <span class="pays">platí →</span> ${W}</div>
     <div class="sum${ui.points===null?' zero':''}">${money(c.stake)}</div>
     <div class="calc">${ui.points===null ? 'posuň body v ruce' :
       `${pts} b × ${numC(pv())} = ${numC(c.raw)}${c.raw!==c.base?` ≈ ${c.base}`:''} · × ${numC(ui.mult)}${c.base*ui.mult!==c.stake?` = ${numC(c.base*ui.mult)} ≈ ${c.stake}`:''}`}</div>`;
@@ -1289,10 +1320,12 @@ function renderNastaveni(){
 
 function renderDayTable(){
   const days = allDays().filter(d=>d.games.length);
-  if(!days.length){ $('#daytable').innerHTML = `<div class="empty"><span class="em">📭</span>Zatím se neodehrál žádný herní den.</div>`; return; }
-  // hráči, kteří někdy hráli – seřazení podle celkového výsledku
+  const ob = openingBal(), hasOpen = Object.keys(ob).length > 0;
+  if(!days.length && !hasOpen){ $('#daytable').innerHTML = `<div class="empty"><span class="em">📭</span>Zatím se neodehrál žádný herní den.</div>`; return; }
+  // hráči, kteří někdy hráli – seřazení podle celkového výsledku (včetně počátečního stavu)
   const total = {}, kings = {};
   days.forEach(d=>ranking(d.games).forEach(x=>total[x.id]=(total[x.id]||0)+x.v));
+  for(const id in ob) total[id] = (total[id]||0) + ob[id];
   const cols = Object.keys(total).sort((a,b)=>total[b]-total[a]);
   const fmt = v => `${v>0?'+':''}${num(v)}`;
   const rows = days.map(d=>{
@@ -1306,7 +1339,8 @@ function renderDayTable(){
       const v=r[id], cls = (v===max&&v>0)?'best':(v===min&&v<0)?'worst':'';
       return `<td class="${cls}">${cls==='best'?'👑 ':''}${fmt(v)}</td>`;
     }).join('')}</tr>`;
-  }).join('');
+  }).join('') + (hasOpen ? `<tr class="opening"><td>📜 Před Prsíčkem<div class="dd">počáteční stav</div></td>${cols.map(id=>
+      id in ob ? `<td>${fmt(ob[id])}</td>` : '<td class="na">·</td>').join('')}</tr>` : '');
   $('#daytable').innerHTML = `
     <div class="tblwrap"><table class="daytbl">
       <thead><tr><th>Den</th>${cols.map(id=>`<th title="${esc(P(id).name)}">${tok(P(id),'s')}</th>`).join('')}</tr></thead>
@@ -1320,10 +1354,41 @@ function renderDayTable(){
   renderDayDetail();
 }
 
+let openDraft = null;   // rozepsané zůstatky {id: text z políčka}
+const parseKc = v => { const n = parseFloat(String(v??'').replace(/\s/g,'').replace(',','.')); return isNaN(n) ? 0 : Math.round(n); };
+function openSum(draft){ const bal = {}; let sum = 0; for(const [id,v] of Object.entries(draft)){ const n = parseKc(v); if(n){ bal[id]=n; sum+=n; } } return {sum, bal}; }
+const openSumHtml = sum => `<div class="osum${sum!==0?' bad':''}">${sum===0 ? '✅ Součet sedí (0).' : `⚠️ Součet je ${sum>0?'+':''}${num(sum)}, obvykle vychází 0 (co jeden prohrál, jiný vyhrál). Uložit to jde i tak.`}</div>`;
+function renderOpening(){
+  const box = $('#open-box'); if(!box) return;
+  if(box.contains(document.activeElement) && document.activeElement.tagName==='INPUT') return;
+  const saved = openingBal(), has = Object.keys(saved).length > 0;
+  if(!canEdit()){
+    box.innerHTML = has ? Object.entries(saved).map(([id,v])=>`<div class="obal">${tok(P(id),'s')}<span class="nm">${esc(P(id).name)}</span><b class="${v>0?'pos':'neg'}">${v>0?'+':''}${money(v)}</b></div>`).join('')
+      : '<p class="sub">Počáteční stav není zadaný.</p>';
+    return;
+  }
+  const draft = openDraft || saved;
+  const players = db.players.filter(p=>!p.hidden || p.id in draft);
+  const {sum, bal} = openSum(draft);
+  box.innerHTML = `
+    ${players.map(p=>`<div class="obal">${tok(p,'s')}<span class="nm">${esc(p.name)}</span>
+      <input type="text" inputmode="numeric" data-obal="${p.id}" value="${draft[p.id]??''}" placeholder="0"> ${esc(db.settings.currency||'Kč')}</div>`).join('')}
+    <div id="open-sum">${openSumHtml(sum)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn ok" id="open-save" ${!Object.keys(bal).length?'disabled':''}>💾 Uložit počáteční stav</button>
+      ${has ? '<button class="btn danger" id="open-clear">🗑️ Smazat počáteční stav</button>' : ''}
+      ${openDraft ? '<button class="btn" id="open-cancel">Zrušit změny</button>' : ''}
+    </div>
+    ${has ? `<p class="sub" style="margin-top:8px">Uloženo ${new Date(db.opening.ts*1000).toLocaleString('cs-CZ',{day:'numeric',month:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'})}.</p>` : ''}`;
+}
+
 function renderBilance(){
   renderDayTable();
   // celkový žebříček – jen ze her (vyrovnání dluhů na pořadí nemá vliv)
   const all = ranking(db.games);
+  { const ob = openingBal();   // počáteční stav přičíst k výsledku (výhry/prohry se nemění)
+    for(const id in ob){ let x = all.find(a=>a.id===id); if(!x){ x = {id, v:0, w:0, l:0}; all.push(x); } x.v += ob[id]; x.open = ob[id]; }
+    all.sort((a,b)=> b.v-a.v || b.w-a.w || a.l-b.l); }
   const kingDays = {};
   allDays().filter(d=>d.closedTs && d.games.length).forEach(d=>{ const r=ranking(d.games); if(r[0]&&r[0].v>0&&(!r[1]||r[1].v<r[0].v)) kingDays[r[0].id]=(kingDays[r[0].id]||0)+1; });
   const title = (i,n,v)=> i===0&&v>0?'👑 Dešťový baron' : i===n-1&&v<0?'☔ Promoklý do nitě' : v>0?'🌤️ Suchý a spokojený' : v<0?'🌧️ Mírně mokne':'🌫️ Mlha, nic se neděje';
@@ -1332,7 +1397,7 @@ function renderBilance(){
       <span class="pl" style="font-family:var(--display);font-size:20px;width:28px;text-align:center">${PLACE[i]||(i+1)+'.'}</span>
       ${tok(P(x.id))}
       <div><div class="nm">${esc(P(x.id).name)}</div>
-        <div class="tt">${title(i,all.length,x.v)} · ${x.w}× výhra · ${x.l}× prohra${kingDays[x.id]?` · 👑 ${kingDays[x.id]}× král dne`:''}</div></div>
+        <div class="tt">${title(i,all.length,x.v)} · ${x.w}× výhra · ${x.l}× prohra${kingDays[x.id]?` · 👑 ${kingDays[x.id]}× král dne`:''}${x.open?` · 📜 z dřívějška ${x.open>0?'+':''}${num(x.open)}`:''}</div></div>
       <div class="val">${signed(x.v)}</div>
     </div>`).join('')
     : `<div class="empty"><span class="em">🏜️</span>Zatím sucho. Žádné hry, žádné peníze.</div>`;
@@ -1482,6 +1547,18 @@ document.addEventListener('click', async e=>{
   const d = t.dataset;
 
   if(d.v){ showView(d.v); return; }
+  if(t.id==='open-save'){
+    const {bal} = openSum(openDraft || openingBal());
+    if(!confirm('Uložit počáteční stav? Započte se do celkového žebříčku.')) return;
+    if(await op({action:'set_opening', balances:bal})){ openDraft=null; renderOpening(); toast('📜 Počáteční stav uložen. Mrkni do Bilance.'); }
+    return;
+  }
+  if(t.id==='open-clear'){
+    if(!confirm('Smazat počáteční stav? Hry ani vyrovnání se nezmění.')) return;
+    if(await op({action:'clear_opening'})){ openDraft=null; renderOpening(); toast('🗑️ Počáteční stav smazán.'); }
+    return;
+  }
+  if(t.id==='open-cancel'){ openDraft=null; renderOpening(); return; }
   if(d.day!==undefined){ openDayId = d.day || null; renderDayDetail(); return; }
 
   // úprava hry
@@ -1696,6 +1773,15 @@ document.addEventListener('change', async e=>{
 });
 document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.dataset && (e.target.dataset.abbr || e.target.dataset.rename)) e.target.blur(); });
 document.addEventListener('input', e=>{
+  if(e.target.dataset && e.target.dataset.obal){   // jen přepočítat součet, políčka nepřekreslovat
+    const first = !openDraft;
+    openDraft = openDraft || {...openingBal()};
+    openDraft[e.target.dataset.obal] = e.target.value;
+    const {sum, bal} = openSum(openDraft);
+    $('#open-sum').innerHTML = openSumHtml(sum);
+    $('#open-save').disabled = !Object.keys(bal).length;
+    if(first && !$('#open-cancel')) $('#open-save').insertAdjacentHTML('afterend',' <button class="btn" id="open-cancel">Zrušit změny</button>');
+  }
   if(edit && e.target.classList.contains('e-note')) edit.note = e.target.value;
   if(edit && e.target.classList.contains('e-pts')){
     const v = e.target.value.trim(); edit.points = v==='' ? null : Math.max(0, Math.min(999, parseInt(v,10)||0));
