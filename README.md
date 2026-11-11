@@ -13,6 +13,7 @@ Počítadlo karetní hry **prší** pro partu u stolu. Mobilní webová aplikace
 - 📅 **Bilance** – výsledky po dnech, celkový žebříček, kdo komu dluží, statistiky.
 - 🤝 **Vyrovnání** – dluhy mezi dvojicí se vzájemně odečtou, zaplacené se odškrtnou.
 - 🎯 **Zkratky hráčů** – u stolu se hráč ukazuje jedinečnou zkratkou.
+- 📜 **Počáteční stav** – zůstatky z doby před Prsíčkem se jednorázově zadají a přičtou do žebříčku.
 - ✏️ **Opravy** – upravit jde vše zapsané: hry, data dnů, hráče, vyrovnání.
 - 🔒 **Heslo** – číst může každý, zapisovat jen se znalostí hesla.
 - 👥 **Sdílené** – data leží na serveru, všechna zařízení vidí totéž.
